@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+﻿import { Link, useRouterState } from "@tanstack/react-router";
 import { BookOpen, Dices, Palette, Save, Users } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -22,9 +22,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-4xl items-center gap-3 px-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-lg bg-[image:var(--gradient-primary)] text-primary-foreground shadow-[var(--shadow-glow)]">
-              <Dices className="size-4" />
-            </span>
+            <img
+              src="/icon-192.png"
+              alt=""
+              aria-hidden="true"
+              className="size-9 rounded-lg object-cover shadow-[var(--shadow-glow)]"
+              width={36}
+              height={36}
+            />
             <span className="font-display text-lg font-semibold">Grimório</span>
           </Link>
 
