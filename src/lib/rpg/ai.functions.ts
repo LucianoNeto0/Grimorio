@@ -302,7 +302,7 @@ async function requestModels(
         elapsedMs: Date.now() - startedAt,
         timedOut,
       });
-      break;
+      continue;
     }
 
     const payload: unknown = await response.json().catch(() => null);
@@ -357,7 +357,7 @@ const callGemini = (apiKey: string, models: string[], prompt: string) =>
               maxOutputTokens: 4096,
             },
           }),
-          signal: AbortSignal.timeout(30_000),
+          signal: AbortSignal.timeout(15_000),
         },
       ),
     (payload) => {
@@ -450,12 +450,14 @@ export const generateCharacter = createServerFn({ method: "POST" })
 
     const geminiKey = process.env["GEMINI_API_KEY"]?.trim();
     if (geminiKey) {
-      // Use a single Gemini model per request to avoid spending extra RPM/RPD
-      // on model-by-model retries. The compatible provider below remains the
+      // Try the configured models in order, with Gemini 3.6 Flash as a backup
+      // unless it is already listed. The compatible provider remains the
       // cross-provider fallback.
-      const model =
-        list(process.env["GEMINI_MODELS"], ["gemini-3.8-flash"])[0] ?? "gemini-3.8-flash";
-      attempts.push(() => callGemini(geminiKey, [model], ideaPrompt));
+      const configuredModels = list(process.env["GEMINI_MODELS"], ["gemini-3.8-flash"]);
+      const models = configuredModels.includes("gemini-3.6-flash")
+        ? configuredModels
+        : [...configuredModels, "gemini-3.6-flash"];
+      attempts.push(() => callGemini(geminiKey, models, ideaPrompt));
     }
 
     const baseUrl = (process.env["AI_BASE_URL"] || "").trim().replace(/\/$/, "");
