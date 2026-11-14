@@ -5,12 +5,47 @@ export const PALETTES: Record<
   PaletteKey,
   { name: string; bg: string; card: string; tx: string; ac: string; dark: boolean }
 > = {
-  pergaminho: { name: "Pergaminho", bg: "#f3ede3", card: "#fdfaf4", tx: "#2b241e", ac: "#8b3a2f", dark: false },
-  noite: { name: "Noite", bg: "#1a1715", card: "#25211f", tx: "#efe8de", ac: "#e0745f", dark: true },
-  floresta: { name: "Floresta", bg: "#ebf2ea", card: "#fafdf9", tx: "#1d2b20", ac: "#2f7d4a", dark: false },
-  oceano: { name: "Oceano", bg: "#0f1c2c", card: "#172739", tx: "#e6eef7", ac: "#4aa8e0", dark: true },
+  pergaminho: {
+    name: "Pergaminho",
+    bg: "#f3ede3",
+    card: "#fdfaf4",
+    tx: "#2b241e",
+    ac: "#8b3a2f",
+    dark: false,
+  },
+  noite: {
+    name: "Noite",
+    bg: "#1a1715",
+    card: "#25211f",
+    tx: "#efe8de",
+    ac: "#e0745f",
+    dark: true,
+  },
+  floresta: {
+    name: "Floresta",
+    bg: "#ebf2ea",
+    card: "#fafdf9",
+    tx: "#1d2b20",
+    ac: "#2f7d4a",
+    dark: false,
+  },
+  oceano: {
+    name: "Oceano",
+    bg: "#0f1c2c",
+    card: "#172739",
+    tx: "#e6eef7",
+    ac: "#4aa8e0",
+    dark: true,
+  },
   rubi: { name: "Rubi", bg: "#faeef0", card: "#fffdfd", tx: "#2e1519", ac: "#c2185b", dark: false },
-  arcano: { name: "Arcano", bg: "#1b1428", card: "#271d38", tx: "#f0e9fb", ac: "#a97bff", dark: true },
+  arcano: {
+    name: "Arcano",
+    bg: "#1b1428",
+    card: "#271d38",
+    tx: "#f0e9fb",
+    ac: "#a97bff",
+    dark: true,
+  },
 };
 
 export type ThemeSettings = {

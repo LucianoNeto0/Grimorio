@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { rollCheck } from "@/lib/rpg/dice";
 import { BAR_COLORS, clampBar, uid, type Section, type Sheet } from "@/lib/rpg/sheet";
-import { useRpg } from "@/lib/rpg/store";
+import { useRpg } from "@/lib/rpg/useRpg";
 import { cn } from "@/lib/utils";
 
 import { ConfirmButton } from "./ConfirmButton";
@@ -40,10 +40,22 @@ export function SectionCard({ section, index, edit }: Props) {
             aria-label="Nome da seção"
             onChange={(e) => update((d) => void (pick(d, section.id)!.t = e.target.value))}
           />
-          <Button size="icon-sm" variant="ghost" disabled={index === 0} onClick={() => move(-1)} aria-label="Mover para cima">
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            disabled={index === 0}
+            onClick={() => move(-1)}
+            aria-label="Mover para cima"
+          >
             <ArrowUp />
           </Button>
-          <Button size="icon-sm" variant="ghost" disabled={last} onClick={() => move(1)} aria-label="Mover para baixo">
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            disabled={last}
+            onClick={() => move(1)}
+            aria-label="Mover para baixo"
+          >
             <ArrowDown />
           </Button>
           <ConfirmButton
@@ -81,11 +93,20 @@ export function SectionCard({ section, index, edit }: Props) {
   );
 }
 
-function BarSection({ section, edit }: { section: Extract<Section, { type: "bar" }>; edit: boolean }) {
+function BarSection({
+  section,
+  edit,
+}: {
+  section: Extract<Section, { type: "bar" }>;
+  edit: boolean;
+}) {
   const { update } = useRpg();
   const [amount, setAmount] = useState<Record<string, string>>({});
 
-  const setRow = (rid: string, fn: (r: Extract<Section, { type: "bar" }>["rows"][number]) => void) =>
+  const setRow = (
+    rid: string,
+    fn: (r: Extract<Section, { type: "bar" }>["rows"][number]) => void,
+  ) =>
     update((d) => {
       const s = pick(d, section.id);
       if (s?.type !== "bar") return;
@@ -155,7 +176,10 @@ function BarSection({ section, edit }: { section: Extract<Section, { type: "bar"
             <div className="h-3.5 overflow-hidden rounded-full bg-muted ring-1 ring-border">
               <div
                 className="h-full rounded-full transition-[width] duration-300 ease-out"
-                style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${r.c}, color-mix(in oklab, ${r.c} 70%, var(--card)))` }}
+                style={{
+                  width: `${pct}%`,
+                  background: `linear-gradient(90deg, ${r.c}, color-mix(in oklab, ${r.c} 70%, var(--card)))`,
+                }}
               />
             </div>
             {!edit && (
@@ -198,7 +222,13 @@ function BarSection({ section, edit }: { section: Extract<Section, { type: "bar"
             update((d) => {
               const s = pick(d, section.id);
               if (s?.type === "bar")
-                s.rows.push({ id: uid(), l: "Nova barra", v: 10, max: 10, c: BAR_COLORS[s.rows.length % BAR_COLORS.length]! });
+                s.rows.push({
+                  id: uid(),
+                  l: "Nova barra",
+                  v: 10,
+                  max: 10,
+                  c: BAR_COLORS[s.rows.length % BAR_COLORS.length]!,
+                });
             })
           }
         >
@@ -209,7 +239,13 @@ function BarSection({ section, edit }: { section: Extract<Section, { type: "bar"
   );
 }
 
-function NumSection({ section, edit }: { section: Extract<Section, { type: "num" }>; edit: boolean }) {
+function NumSection({
+  section,
+  edit,
+}: {
+  section: Extract<Section, { type: "num" }>;
+  edit: boolean;
+}) {
   const { update, pushRoll } = useRpg();
   // Short labels (FOR, DES…) read best as tiles; longer ones as a list.
   const tiles = !edit && section.rows.length > 0 && section.rows.every((r) => r.l.length <= 4);
@@ -232,7 +268,10 @@ function NumSection({ section, edit }: { section: Extract<Section, { type: "num"
     return (
       <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-6">
         {section.rows.map((r) => (
-          <div key={r.id} className="group relative flex flex-col items-center rounded-xl border border-border bg-background/40 px-2 pb-2 pt-2.5">
+          <div
+            key={r.id}
+            className="group relative flex flex-col items-center rounded-xl border border-border bg-background/40 px-2 pb-2 pt-2.5"
+          >
             <span className="eyebrow">{r.l}</span>
             <input
               inputMode="numeric"
@@ -297,7 +336,12 @@ function NumSection({ section, edit }: { section: Extract<Section, { type: "num"
               <X />
             </Button>
           ) : (
-            <Button size="icon-sm" variant="soft" onClick={() => roll(r.l, r.v)} aria-label={`Rolar d20 + ${r.l}`}>
+            <Button
+              size="icon-sm"
+              variant="soft"
+              onClick={() => roll(r.l, r.v)}
+              aria-label={`Rolar d20 + ${r.l}`}
+            >
               <Dices />
             </Button>
           )}
@@ -323,15 +367,25 @@ function NumSection({ section, edit }: { section: Extract<Section, { type: "num"
   );
 }
 
-const CHIP = "rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-bold leading-tight text-primary";
+const CHIP =
+  "rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-bold leading-tight text-primary";
 /** Multi-line text that grows with its content instead of scrolling sideways. */
 const GROW = "w-full resize-none bg-transparent outline-none [field-sizing:content]";
 
-function ListSection({ section, edit }: { section: Extract<Section, { type: "list" }>; edit: boolean }) {
+function ListSection({
+  section,
+  edit,
+}: {
+  section: Extract<Section, { type: "list" }>;
+  edit: boolean;
+}) {
   const { update } = useRpg();
   const [draft, setDraft] = useState("");
 
-  const setRow = (rid: string, fn: (r: Extract<Section, { type: "list" }>["rows"][number]) => void) =>
+  const setRow = (
+    rid: string,
+    fn: (r: Extract<Section, { type: "list" }>["rows"][number]) => void,
+  ) =>
     update((d) => {
       const s = pick(d, section.id);
       const row = s?.type === "list" ? s.rows.find((x) => x.id === rid) : undefined;
@@ -350,7 +404,9 @@ function ListSection({ section, edit }: { section: Extract<Section, { type: "lis
 
   return (
     <div>
-      {section.rows.length === 0 && <p className="mb-3 text-sm text-muted-foreground">Nada aqui ainda.</p>}
+      {section.rows.length === 0 && (
+        <p className="mb-3 text-sm text-muted-foreground">Nada aqui ainda.</p>
+      )}
       <ul className="divide-y divide-border">
         {section.rows.map((r) => {
           const tags = (r.tags ?? []).map((t) => t.trim()).filter(Boolean);
@@ -385,7 +441,10 @@ function ListSection({ section, edit }: { section: Extract<Section, { type: "lis
                 {(edit || r.d) && (
                   <textarea
                     rows={1}
-                    className={cn(GROW, "mt-1 text-sm leading-snug text-muted-foreground focus:text-foreground")}
+                    className={cn(
+                      GROW,
+                      "mt-1 text-sm leading-snug text-muted-foreground focus:text-foreground",
+                    )}
                     value={r.d ?? ""}
                     placeholder="Descrição (opcional)"
                     aria-label={`Descrição de ${r.l}`}
@@ -440,10 +499,19 @@ function ListSection({ section, edit }: { section: Extract<Section, { type: "lis
   );
 }
 
-function FeatSection({ section, edit }: { section: Extract<Section, { type: "feat" }>; edit: boolean }) {
+function FeatSection({
+  section,
+  edit,
+}: {
+  section: Extract<Section, { type: "feat" }>;
+  edit: boolean;
+}) {
   const { update } = useRpg();
 
-  const setRow = (rid: string, fn: (r: Extract<Section, { type: "feat" }>["rows"][number]) => void) =>
+  const setRow = (
+    rid: string,
+    fn: (r: Extract<Section, { type: "feat" }>["rows"][number]) => void,
+  ) =>
     update((d) => {
       const s = pick(d, section.id);
       const row = s?.type === "feat" ? s.rows.find((x) => x.id === rid) : undefined;
@@ -452,7 +520,9 @@ function FeatSection({ section, edit }: { section: Extract<Section, { type: "fea
 
   return (
     <div className="space-y-2.5">
-      {section.rows.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma habilidade ainda.</p>}
+      {section.rows.length === 0 && (
+        <p className="text-sm text-muted-foreground">Nenhuma habilidade ainda.</p>
+      )}
       <div className="grid gap-2.5 sm:grid-cols-2">
         {section.rows.map((r) => (
           <div key={r.id} className="rounded-xl border border-border bg-background/40 p-3">
@@ -492,7 +562,10 @@ function FeatSection({ section, edit }: { section: Extract<Section, { type: "fea
             </div>
             <textarea
               rows={1}
-              className={cn(GROW, "mt-1 text-sm leading-relaxed text-muted-foreground focus:text-foreground")}
+              className={cn(
+                GROW,
+                "mt-1 text-sm leading-relaxed text-muted-foreground focus:text-foreground",
+              )}
               value={r.d}
               placeholder="O que essa habilidade faz…"
               aria-label={`Descrição de ${r.l}`}

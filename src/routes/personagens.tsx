@@ -6,9 +6,15 @@ export const Route = createFileRoute("/personagens")({
   head: () => ({
     meta: [
       { title: "Personagens — Grimório" },
-      { name: "description", content: "Guarde seus personagens e modelos de ficha para usar quando quiser." },
+      {
+        name: "description",
+        content: "Guarde seus personagens e modelos de ficha para usar quando quiser.",
+      },
       { property: "og:title", content: "Personagens — Grimório" },
-      { property: "og:description", content: "Guarde seus personagens e modelos de ficha para usar quando quiser." },
+      {
+        property: "og:description",
+        content: "Guarde seus personagens e modelos de ficha para usar quando quiser.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

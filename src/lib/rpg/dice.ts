@@ -9,7 +9,11 @@ export const fmtMod = (m: number) => (m ? (m > 0 ? ` + ${m}` : ` − ${Math.abs(
 export type RollResult = { total: number; text: string; crit?: "max" | "min" | undefined };
 
 /** Rolls a pool like {6: 2, 20: 1} plus a flat modifier. */
-export function rollPool(pool: Record<number, number>, mod: number, rng: Rng = Math.random): RollResult | null {
+export function rollPool(
+  pool: Record<number, number>,
+  mod: number,
+  rng: Rng = Math.random,
+): RollResult | null {
   const sides = Object.keys(pool)
     .map(Number)
     .filter((n) => (pool[n] ?? 0) > 0)

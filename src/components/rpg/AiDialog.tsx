@@ -4,11 +4,17 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { generateCharacter, type GeneratedCharacter } from "@/lib/rpg/ai.functions";
 import { sheetFromAi } from "@/lib/rpg/fromAi";
-import { useRpg } from "@/lib/rpg/store";
+import { useRpg } from "@/lib/rpg/useRpg";
 import { cn } from "@/lib/utils";
 
 const SYSTEMS = ["Genérico", "D&D 5e", "Tormenta20", "Ordem Paranormal", "Pathfinder"];
@@ -19,7 +25,13 @@ const IDEAS = [
   "Um bardo meio-orc que conta histórias para esconder o passado",
 ];
 
-export function AiDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+export function AiDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
   const { sheet, replaceSheet, setActiveId } = useRpg();
   const generate = useServerFn(generateCharacter);
   const [idea, setIdea] = useState("");
@@ -47,7 +59,9 @@ export function AiDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
     if (!result) return;
     replaceSheet(sheetFromAi(result, sheet.photo));
     setActiveId(null);
-    toast.success(`${result.nome} entrou na aventura!`, { description: "Salve em Personagens para não perder." });
+    toast.success(`${result.nome} entrou na aventura!`, {
+      description: "Salve em Personagens para não perder.",
+    });
     setResult(null);
     setIdea("");
     onOpenChange(false);
@@ -60,7 +74,9 @@ export function AiDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
           <DialogTitle className="flex items-center gap-2 font-display text-xl">
             <Sparkles className="size-5 text-primary" /> Criar personagem com IA
           </DialogTitle>
-          <DialogDescription>Descreva uma ideia e a IA monta a ficha completa, com história.</DialogDescription>
+          <DialogDescription>
+            Descreva uma ideia e a IA monta a ficha completa, com história.
+          </DialogDescription>
         </DialogHeader>
 
         {!result ? (
@@ -101,7 +117,9 @@ export function AiDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
                     onClick={() => setSystem(s)}
                     className={cn(
                       "rounded-full border border-border px-3 py-1.5 text-sm font-semibold transition-colors",
-                      system === s ? "border-primary bg-primary text-primary-foreground" : "hover:border-primary/50",
+                      system === s
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "hover:border-primary/50",
                     )}
                   >
                     {s}
@@ -113,19 +131,39 @@ export function AiDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
             <div className="flex items-center justify-between rounded-xl border border-border px-3 py-2">
               <span className="font-semibold">Nível</span>
               <div className="flex items-center gap-2">
-                <Button size="icon-sm" variant="outline" onClick={() => setLevel((l) => Math.max(1, l - 1))} aria-label="Diminuir nível">
+                <Button
+                  size="icon-sm"
+                  variant="outline"
+                  onClick={() => setLevel((l) => Math.max(1, l - 1))}
+                  aria-label="Diminuir nível"
+                >
                   −
                 </Button>
                 <span className="numeral w-8 text-center text-xl">{level}</span>
-                <Button size="icon-sm" variant="outline" onClick={() => setLevel((l) => Math.min(20, l + 1))} aria-label="Aumentar nível">
+                <Button
+                  size="icon-sm"
+                  variant="outline"
+                  onClick={() => setLevel((l) => Math.min(20, l + 1))}
+                  aria-label="Aumentar nível"
+                >
                   +
                 </Button>
               </div>
             </div>
 
-            {error && <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+            {error && (
+              <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </p>
+            )}
 
-            <Button variant="hero" size="xl" className="w-full" disabled={loading || idea.trim().length < 3} onClick={run}>
+            <Button
+              variant="hero"
+              size="xl"
+              className="w-full"
+              disabled={loading || idea.trim().length < 3}
+              onClick={run}
+            >
               {loading ? (
                 <>
                   <Loader2 className="animate-spin" /> Invocando personagem…
@@ -142,7 +180,9 @@ export function AiDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
             <div className="rounded-xl border border-border bg-muted/60 p-4">
               <p className="font-display text-2xl font-semibold">{result.nome}</p>
               <p className="text-sm text-muted-foreground">
-                {[result.raca, result.classe, result.nivel && `Nível ${result.nivel}`].filter(Boolean).join(" · ")}
+                {[result.raca, result.classe, result.nivel && `Nível ${result.nivel}`]
+                  .filter(Boolean)
+                  .join(" · ")}
               </p>
               <div className="mt-3 grid grid-cols-6 gap-1.5">
                 {result.atributos.slice(0, 6).map((a) => (
@@ -155,7 +195,10 @@ export function AiDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
               {result.habilidades.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {result.habilidades.slice(0, 6).map((h) => (
-                    <span key={h.nome} className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary">
+                    <span
+                      key={h.nome}
+                      className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary"
+                    >
                       {h.nome}
                     </span>
                   ))}
@@ -163,7 +206,9 @@ export function AiDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
               )}
               <p className="mt-3 line-clamp-4 text-sm leading-relaxed">{result.historia}</p>
             </div>
-            <p className="text-xs text-muted-foreground">Usar esta ficha substitui a ficha aberta agora. A foto é mantida.</p>
+            <p className="text-xs text-muted-foreground">
+              Usar esta ficha substitui a ficha aberta agora. A foto é mantida.
+            </p>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => setResult(null)}>
                 Tentar outra

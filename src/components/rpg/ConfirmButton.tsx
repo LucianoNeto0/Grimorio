@@ -8,7 +8,11 @@ export function ConfirmButton({
   children,
   confirmLabel = "Confirmar?",
   ...props
-}: Omit<ButtonProps, "onClick"> & { onConfirm: () => void; children: ReactNode; confirmLabel?: string }) {
+}: Omit<ButtonProps, "onClick"> & {
+  onConfirm: () => void;
+  children: ReactNode;
+  confirmLabel?: string;
+}) {
   const [armed, setArmed] = useState(false);
   useEffect(() => {
     if (!armed) return;

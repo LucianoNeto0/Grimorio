@@ -46,7 +46,12 @@ export function sheetFromAi(c: GeneratedCharacter, photo?: string): Sheet {
 
   const feats: FeatRow[] = c.habilidades.map((h) => {
     const [name, rest] = splitLong(h.nome, 36);
-    return { id: uid(), l: name, tag: clean(h.origem), d: [rest, clean(h.descricao)].filter(Boolean).join(" — ") };
+    return {
+      id: uid(),
+      l: name,
+      tag: clean(h.origem),
+      d: [rest, clean(h.descricao)].filter(Boolean).join(" — "),
+    };
   });
 
   const sheet: Sheet = {
@@ -70,13 +75,21 @@ export function sheetFromAi(c: GeneratedCharacter, photo?: string): Sheet {
         id: uid(),
         t: "Atributos",
         type: "num",
-        rows: c.atributos.map((a) => ({ id: uid(), l: splitLong(a.nome, 12)[0], v: Math.round(a.valor) })),
+        rows: c.atributos.map((a) => ({
+          id: uid(),
+          l: splitLong(a.nome, 12)[0],
+          v: Math.round(a.valor),
+        })),
       },
       {
         id: uid(),
         t: "Perícias",
         type: "num",
-        rows: c.pericias.map((a) => ({ id: uid(), l: splitLong(a.nome, 24)[0], v: Math.round(a.valor) })),
+        rows: c.pericias.map((a) => ({
+          id: uid(),
+          l: splitLong(a.nome, 24)[0],
+          v: Math.round(a.valor),
+        })),
       },
       { id: uid(), t: "Habilidades e traços", type: "feat", rows: [...overflow, ...feats] },
       {
@@ -87,7 +100,13 @@ export function sheetFromAi(c: GeneratedCharacter, photo?: string): Sheet {
           const [name, rest] = splitLong(i.nome, 32);
           const tags = [clean(i.bonus), clean(i.dano)].filter(Boolean);
           const d = [rest, clean(i.descricao)].filter(Boolean).join(" — ");
-          return { id: uid(), l: name, v: String(Math.max(1, Math.round(i.quantidade) || 1)), ...(tags.length ? { tags } : {}), ...(d ? { d } : {}) };
+          return {
+            id: uid(),
+            l: name,
+            v: String(Math.max(1, Math.round(i.quantidade) || 1)),
+            ...(tags.length ? { tags } : {}),
+            ...(d ? { d } : {}),
+          };
         }),
       },
       { id: uid(), t: "História", type: "text", text: c.historia.trim() },

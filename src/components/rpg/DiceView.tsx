@@ -4,7 +4,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { DICE, rollAdvantage, rollPool, type RollResult } from "@/lib/rpg/dice";
-import { useRpg } from "@/lib/rpg/store";
+import { useRpg } from "@/lib/rpg/useRpg";
 import { cn } from "@/lib/utils";
 
 import { PageTitle } from "./AppShell";
@@ -28,12 +28,19 @@ export function DiceView() {
     setLast({ ...r, key: e.id });
   };
 
-  const poolKeys = Object.keys(pool).map(Number).sort((a, b) => a - b);
-  const expr = poolKeys.map((n) => `${pool[n]}d${n}`).join(" + ") + (mod ? (mod > 0 ? ` + ${mod}` : ` − ${Math.abs(mod)}`) : "");
+  const poolKeys = Object.keys(pool)
+    .map(Number)
+    .sort((a, b) => a - b);
+  const expr =
+    poolKeys.map((n) => `${pool[n]}d${n}`).join(" + ") +
+    (mod ? (mod > 0 ? ` + ${mod}` : ` − ${Math.abs(mod)}`) : "");
 
   return (
     <div className="space-y-4">
-      <PageTitle title="Mesa de dados" subtitle="Toque nos dados para montar a rolagem. Misture tipos à vontade." />
+      <PageTitle
+        title="Mesa de dados"
+        subtitle="Toque nos dados para montar a rolagem. Misture tipos à vontade."
+      />
 
       <section className="panel p-4 sm:p-5">
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
@@ -59,12 +66,25 @@ export function DiceView() {
             <span className="text-sm text-muted-foreground">Nenhum dado escolhido</span>
           ) : (
             poolKeys.map((n) => (
-              <span key={n} className="flex items-center gap-1 rounded-full bg-primary-soft py-1 pl-3 pr-1 text-sm font-bold text-primary">
+              <span
+                key={n}
+                className="flex items-center gap-1 rounded-full bg-primary-soft py-1 pl-3 pr-1 text-sm font-bold text-primary"
+              >
                 {pool[n]}d{n}
-                <button type="button" className="grid size-6 place-items-center rounded-full hover:bg-card" onClick={() => add(n, -1)} aria-label={`Tirar um d${n}`}>
+                <button
+                  type="button"
+                  className="grid size-6 place-items-center rounded-full hover:bg-card"
+                  onClick={() => add(n, -1)}
+                  aria-label={`Tirar um d${n}`}
+                >
                   <Minus className="size-3.5" />
                 </button>
-                <button type="button" className="grid size-6 place-items-center rounded-full hover:bg-card" onClick={() => add(n, 1)} aria-label={`Mais um d${n}`}>
+                <button
+                  type="button"
+                  className="grid size-6 place-items-center rounded-full hover:bg-card"
+                  onClick={() => add(n, 1)}
+                  aria-label={`Mais um d${n}`}
+                >
                   <Plus className="size-3.5" />
                 </button>
               </span>
@@ -75,7 +95,12 @@ export function DiceView() {
         <div className="mt-3 flex items-center justify-between rounded-xl border border-border px-3 py-2">
           <span className="font-semibold">Modificador</span>
           <div className="flex items-center gap-2">
-            <Button size="icon-sm" variant="outline" onClick={() => setMod((m) => m - 1)} aria-label="Diminuir modificador">
+            <Button
+              size="icon-sm"
+              variant="outline"
+              onClick={() => setMod((m) => m - 1)}
+              aria-label="Diminuir modificador"
+            >
               <Minus />
             </Button>
             <input
@@ -85,7 +110,12 @@ export function DiceView() {
               value={mod}
               onChange={(e) => setMod(parseInt(e.target.value) || 0)}
             />
-            <Button size="icon-sm" variant="outline" onClick={() => setMod((m) => m + 1)} aria-label="Aumentar modificador">
+            <Button
+              size="icon-sm"
+              variant="outline"
+              onClick={() => setMod((m) => m + 1)}
+              aria-label="Aumentar modificador"
+            >
               <Plus />
             </Button>
           </div>
@@ -98,7 +128,10 @@ export function DiceView() {
             className="flex-1"
             onClick={() => {
               const r = rollPool(pool, mod);
-              if (!r) { toast("Escolha pelo menos um dado"); return; }
+              if (!r) {
+                toast("Escolha pelo menos um dado");
+                return;
+              }
               show(r);
             }}
           >
@@ -127,7 +160,10 @@ export function DiceView() {
         </div>
 
         {last && (
-          <div key={last.key} className="mt-5 flex flex-col items-center gap-1 rounded-2xl bg-primary-soft py-5 text-center">
+          <div
+            key={last.key}
+            className="mt-5 flex flex-col items-center gap-1 rounded-2xl bg-primary-soft py-5 text-center"
+          >
             <span
               className={cn(
                 "numeral animate-roll-in text-6xl text-primary",
@@ -137,7 +173,9 @@ export function DiceView() {
             >
               {last.total}
             </span>
-            {last.crit && <span className="eyebrow">{last.crit === "max" ? "Crítico!" : "Falha crítica"}</span>}
+            {last.crit && (
+              <span className="eyebrow">{last.crit === "max" ? "Crítico!" : "Falha crítica"}</span>
+            )}
             <span className="px-4 text-sm text-muted-foreground">{last.text}</span>
           </div>
         )}
@@ -147,13 +185,22 @@ export function DiceView() {
         <div className="mb-3 flex items-center justify-between">
           <h2 className="section-title">Histórico</h2>
           {history.length > 0 && (
-            <ConfirmButton size="sm" variant="ghost" onConfirm={() => { clearHistory(); setLast(null); }}>
+            <ConfirmButton
+              size="sm"
+              variant="ghost"
+              onConfirm={() => {
+                clearHistory();
+                setLast(null);
+              }}
+            >
               Limpar
             </ConfirmButton>
           )}
         </div>
         {history.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Sem rolagens ainda. Rolagens da ficha também aparecem aqui.</p>
+          <p className="text-sm text-muted-foreground">
+            Sem rolagens ainda. Rolagens da ficha também aparecem aqui.
+          </p>
         ) : (
           <ul className="divide-y divide-border">
             {history.map((h) => (
@@ -169,7 +216,10 @@ export function DiceView() {
                 </span>
                 <span className="flex-1 text-sm text-muted-foreground">{h.text}</span>
                 <span className="text-[11px] tabular-nums text-muted-foreground">
-                  {new Date(h.at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                  {new Date(h.at).toLocaleTimeString("pt-BR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </span>
               </li>
             ))}

@@ -66,8 +66,18 @@ describe("ficha criada pela IA", () => {
     mana: 0,
     atributos: [{ nome: "DES", valor: 16 }],
     pericias: [{ nome: "Furtividade", valor: 7 }],
-    habilidades: [{ nome: "Ataque Furtivo", origem: "Classe", descricao: "+2d6 de dano uma vez por turno." }],
-    itens: [{ nome: "Adaga", quantidade: 2, bonus: "+5 ataque", dano: "1d4+3 perfurante", descricao: "Leve e arremessável." }],
+    habilidades: [
+      { nome: "Ataque Furtivo", origem: "Classe", descricao: "+2d6 de dano uma vez por turno." },
+    ],
+    itens: [
+      {
+        nome: "Adaga",
+        quantidade: 2,
+        bonus: "+5 ataque",
+        dano: "1d4+3 perfurante",
+        descricao: "Leve e arremessável.",
+      },
+    ],
     historia: "Era uma vez.",
   };
 
@@ -75,7 +85,10 @@ describe("ficha criada pela IA", () => {
     const s = sheetFromAi(base);
     expect(s.head[1]!.v).toBe("Halfling Pés-Leves");
     const feats = s.secs.find((x) => x.type === "feat");
-    expect(feats?.type === "feat" && feats.rows[0]).toMatchObject({ l: "Halfling Pés-Leves", tag: "Raça" });
+    expect(feats?.type === "feat" && feats.rows[0]).toMatchObject({
+      l: "Halfling Pés-Leves",
+      tag: "Raça",
+    });
     expect(feats?.type === "feat" && feats.rows[0]!.d).toContain("+2 de Destreza");
   });
 
@@ -83,7 +96,12 @@ describe("ficha criada pela IA", () => {
     const s = sheetFromAi(base);
     const itens = s.secs.find((x) => x.type === "list");
     const adaga = itens?.type === "list" ? itens.rows[0] : undefined;
-    expect(adaga).toMatchObject({ l: "Adaga", v: "2", tags: ["+5 ataque", "1d4+3 perfurante"], d: "Leve e arremessável." });
+    expect(adaga).toMatchObject({
+      l: "Adaga",
+      v: "2",
+      tags: ["+5 ataque", "1d4+3 perfurante"],
+      d: "Leve e arremessável.",
+    });
   });
 
   it("nível mostra só o número", () => {

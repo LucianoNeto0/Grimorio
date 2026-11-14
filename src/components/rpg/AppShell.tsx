@@ -3,7 +3,7 @@ import { BookOpen, Dices, Palette, Save, Users } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
-import { useRpg } from "@/lib/rpg/store";
+import { useRpg } from "@/lib/rpg/useRpg";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -50,7 +50,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                 variant={isDirty ? "default" : "ghost"}
                 onClick={saveActive}
                 disabled={!isDirty}
-                title={isDirty ? `Salvar alterações em ${activePreset.name}` : `Tudo salvo em ${activePreset.name}`}
+                title={
+                  isDirty
+                    ? `Salvar alterações em ${activePreset.name}`
+                    : `Tudo salvo em ${activePreset.name}`
+                }
               >
                 <Save />
                 <span className="max-w-32 truncate">{isDirty ? "Salvar" : "Salvo"}</span>
@@ -79,7 +83,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                   on && "text-primary",
                 )}
               >
-                <span className={cn("grid h-7 w-12 place-items-center rounded-full transition-colors", on && "bg-primary-soft")}>
+                <span
+                  className={cn(
+                    "grid h-7 w-12 place-items-center rounded-full transition-colors",
+                    on && "bg-primary-soft",
+                  )}
+                >
                   <Icon className="size-[18px]" />
                 </span>
                 {label}
@@ -92,7 +101,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-export function PageTitle({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
+export function PageTitle({
+  title,
+  subtitle,
+  action,
+}: {
+  title: string;
+  subtitle?: string;
+  action?: ReactNode;
+}) {
   return (
     <div className="mb-5 flex items-end justify-between gap-3">
       <div>

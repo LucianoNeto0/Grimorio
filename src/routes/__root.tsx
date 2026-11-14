@@ -81,9 +81,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "Grimório — Ficha de RPG" },
-      { name: "description", content: "Ficha de RPG com dados, personagens salvos e criação de personagens com IA." },
+      {
+        name: "description",
+        content: "Ficha de RPG com dados, personagens salvos e criação de personagens com IA.",
+      },
       { property: "og:title", content: "Grimório — Ficha de RPG" },
-      { property: "og:description", content: "Ficha de RPG com dados, personagens salvos e criação de personagens com IA." },
+      {
+        property: "og:description",
+        content: "Ficha de RPG com dados, personagens salvos e criação de personagens com IA.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

@@ -2,7 +2,7 @@ import { Camera, X } from "lucide-react";
 import { useRef } from "react";
 import { toast } from "sonner";
 
-import { useRpg } from "@/lib/rpg/store";
+import { useRpg } from "@/lib/rpg/useRpg";
 import { shrinkImage } from "@/lib/rpg/storage";
 
 export function Portrait() {

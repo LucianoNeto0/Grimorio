@@ -1,37 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import type { RollResult } from "./dice";
 import { baseSheet, clone, normalizeSheet, sameSheet, uid, type Preset, type Sheet } from "./sheet";
+import { RpgContext, type HistoryEntry, type RpgStore } from "./store-context";
 import { KEYS, load, save } from "./storage";
 import { applyTheme, normalizeTheme, type SavedTheme, type ThemeSettings } from "./theme";
-
-export type HistoryEntry = { id: string; text: string; total: number; crit?: "max" | "min" | undefined; at: number };
-
-type Store = {
-  ready: boolean;
-  sheet: Sheet;
-  /** Mutate a draft of the sheet; the result is saved locally right away. */
-  update: (fn: (draft: Sheet) => void) => void;
-  replaceSheet: (s: Sheet) => void;
-  presets: Preset[];
-  setPresets: (p: Preset[]) => void;
-  activeId: string | null;
-  setActiveId: (id: string | null) => void;
-  activePreset: Preset | undefined;
-  isDirty: boolean;
-  saveActive: () => void;
-  theme: ThemeSettings | null;
-  setTheme: (t: ThemeSettings | null) => void;
-  patchTheme: (p: Partial<ThemeSettings>) => void;
-  themes: SavedTheme[];
-  setThemes: (t: SavedTheme[]) => void;
-  history: HistoryEntry[];
-  pushRoll: (r: RollResult) => HistoryEntry;
-  clearHistory: () => void;
-};
-
-const Ctx = createContext<Store | null>(null);
 
 const warnFull = () =>
   toast.error("Sem espaço para salvar", {
@@ -92,17 +66,14 @@ export function RpgProvider({ children }: { children: ReactNode }) {
     if (!save(KEYS.theme, t)) warnFull();
   }, []);
 
-  const patchTheme = useCallback(
-    (p: Partial<ThemeSettings>) => {
-      setThemeState((cur) => {
-        const next: ThemeSettings = { ...(cur ?? { pal: "pergaminho", dim: 60 }), ...p };
-        applyTheme(next);
-        if (!save(KEYS.theme, next)) warnFull();
-        return next;
-      });
-    },
-    [],
-  );
+  const patchTheme = useCallback((p: Partial<ThemeSettings>) => {
+    setThemeState((cur) => {
+      const next: ThemeSettings = { ...(cur ?? { pal: "pergaminho", dim: 60 }), ...p };
+      applyTheme(next);
+      if (!save(KEYS.theme, next)) warnFull();
+      return next;
+    });
+  }, []);
 
   const setThemes = useCallback((t: SavedTheme[]) => {
     setThemesState(t);
@@ -115,18 +86,28 @@ export function RpgProvider({ children }: { children: ReactNode }) {
   const saveActive = useCallback(() => {
     if (!activePreset) return;
     setPresets(
-      presets.map((p) => (p.id === activePreset.id ? { ...p, data: clone(sheetRef.current), updatedAt: Date.now() } : p)),
+      presets.map((p) =>
+        p.id === activePreset.id
+          ? { ...p, data: clone(sheetRef.current), updatedAt: Date.now() }
+          : p,
+      ),
     );
     toast.success(`Salvo em “${activePreset.name}”`);
   }, [activePreset, presets, setPresets]);
 
   const pushRoll = useCallback((r: RollResult) => {
-    const e: HistoryEntry = { id: uid(), text: r.text, total: r.total, crit: r.crit, at: Date.now() };
+    const e: HistoryEntry = {
+      id: uid(),
+      text: r.text,
+      total: r.total,
+      crit: r.crit,
+      at: Date.now(),
+    };
     setHistory((h) => [e, ...h].slice(0, 30));
     return e;
   }, []);
 
-  const value = useMemo<Store>(
+  const value = useMemo<RpgStore>(
     () => ({
       ready,
       sheet,
@@ -148,14 +129,27 @@ export function RpgProvider({ children }: { children: ReactNode }) {
       pushRoll,
       clearHistory: () => setHistory([]),
     }),
-    [ready, sheet, update, commit, presets, setPresets, activeId, setActiveId, activePreset, isDirty, saveActive, theme, setTheme, patchTheme, themes, setThemes, history, pushRoll],
+    [
+      ready,
+      sheet,
+      update,
+      commit,
+      presets,
+      setPresets,
+      activeId,
+      setActiveId,
+      activePreset,
+      isDirty,
+      saveActive,
+      theme,
+      setTheme,
+      patchTheme,
+      themes,
+      setThemes,
+      history,
+      pushRoll,
+    ],
   );
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
-}
-
-export function useRpg() {
-  const v = useContext(Ctx);
-  if (!v) throw new Error("useRpg must be used inside RpgProvider");
-  return v;
+  return <RpgContext.Provider value={value}>{children}</RpgContext.Provider>;
 }

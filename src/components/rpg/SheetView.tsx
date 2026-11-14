@@ -1,10 +1,21 @@
 import { Link } from "@tanstack/react-router";
-import { AlignLeft, BarChart3, Check, Hash, List, Pencil, Plus, ScrollText, Sparkles, X } from "lucide-react";
+import {
+  AlignLeft,
+  BarChart3,
+  Check,
+  Hash,
+  List,
+  Pencil,
+  Plus,
+  ScrollText,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { newSection, uid, type SectionType } from "@/lib/rpg/sheet";
-import { useRpg } from "@/lib/rpg/store";
+import { useRpg } from "@/lib/rpg/useRpg";
 
 import { AiDialog } from "./AiDialog";
 import { Loading } from "./AppShell";
@@ -39,7 +50,10 @@ export function SheetView() {
           {edit ? "Concluir edição" : "Editar estrutura"}
         </Button>
         {!activePreset && (
-          <Link to="/personagens" className="ml-auto text-xs font-semibold text-muted-foreground underline-offset-4 hover:text-primary hover:underline">
+          <Link
+            to="/personagens"
+            className="ml-auto text-xs font-semibold text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+          >
             Guardar este personagem →
           </Link>
         )}
@@ -52,7 +66,9 @@ export function SheetView() {
           <Portrait />
           <div className="min-w-0 flex-1">
             <p className="eyebrow">{activePreset ? activePreset.name : "Personagem"}</p>
-            <h1 className="mb-3 truncate text-2xl font-semibold sm:text-3xl">{name || "Sem nome"}</h1>
+            <h1 className="mb-3 truncate text-2xl font-semibold sm:text-3xl">
+              {name || "Sem nome"}
+            </h1>
             <div className="grid grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-2">
               {sheet.head.map((f, i) => (
                 <div key={f.id} className="min-w-0">
@@ -64,7 +80,12 @@ export function SheetView() {
                         aria-label="Nome do campo"
                         onChange={(e) => update((d) => void (d.head[i]!.l = e.target.value))}
                       />
-                      <Button size="icon-sm" variant="ghost" aria-label="Remover campo" onClick={() => update((d) => void d.head.splice(i, 1))}>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label="Remover campo"
+                        onClick={() => update((d) => void d.head.splice(i, 1))}
+                      >
                         <X />
                       </Button>
                     </div>
@@ -89,7 +110,9 @@ export function SheetView() {
                 size="sm"
                 variant="soft"
                 className="mt-3"
-                onClick={() => update((d) => void d.head.push({ id: uid(), l: "Novo campo", v: "" }))}
+                onClick={() =>
+                  update((d) => void d.head.push({ id: uid(), l: "Novo campo", v: "" }))
+                }
               >
                 <Plus /> Campo
               </Button>
@@ -107,7 +130,12 @@ export function SheetView() {
           <p className="section-title mb-3">Nova seção</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
             {NEW_SECTIONS.map(({ type, label, icon: Icon }) => (
-              <Button key={type} variant="tile" className="h-16 flex-col gap-1" onClick={() => update((d) => void d.secs.push(newSection(type)))}>
+              <Button
+                key={type}
+                variant="tile"
+                className="h-16 flex-col gap-1"
+                onClick={() => update((d) => void d.secs.push(newSection(type)))}
+              >
                 <Icon className="text-primary" />
                 {label}
               </Button>
