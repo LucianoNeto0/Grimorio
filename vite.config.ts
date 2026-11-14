@@ -6,7 +6,8 @@ import { defineConfig } from "vite";
 import { fileURLToPath } from "node:url";
 
 export default defineConfig(({ mode }) => {
-  const isApkBuild = mode === "apk";
+  const isApkBuild = mode === "apk" || process.env["GRIMORIO_BUILD_TARGET"] === "apk";
+  if (mode === "apk") process.env["GRIMORIO_BUILD_TARGET"] = "apk";
 
   return {
     define: {
