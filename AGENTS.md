@@ -5,5 +5,6 @@
 - AI calls belong in server functions under `src/lib/rpg/*.functions.ts`. Read provider keys only from server environment variables and return `{ ok, ... }` results for friendly UI errors.
 - AI character output keeps one fact per field. Put bonuses and damage in row tags, and descriptions in `d` or the feat section. `fromAi.ts` splits overflowing text as a safety net.
 - Keep API keys and other secrets out of source control and browser code. `.env` is local-only.
+- Preserve separate release targets in the same repository: Vercel web builds include server-side AI; APK builds use `npm run build:apk` and must exclude AI client code and server secrets. Mark commits `[web]`, `[apk]`, or `[ambos]` so deploy automation routes them correctly; unmarked commits default to web only.
 - Do not hand-edit generated files such as `src/routeTree.gen.ts`.
 - `vite.config.ts` explicitly configures TanStack Start, Tailwind, React, and Nitro for Vercel. Preserve the custom server entry and import protection when changing it.

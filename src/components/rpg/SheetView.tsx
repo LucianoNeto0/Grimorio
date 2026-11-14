@@ -38,13 +38,16 @@ export function SheetView() {
   if (!ready) return <Loading />;
 
   const name = sheet.head[0]?.v.trim();
+  const aiEnabled = import.meta.env.VITE_ENABLE_AI === "true";
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="hero" onClick={() => setAiOpen(true)}>
-          <Sparkles /> Criar com IA
-        </Button>
+        {aiEnabled && (
+          <Button variant="hero" onClick={() => setAiOpen(true)}>
+            <Sparkles /> Criar com IA
+          </Button>
+        )}
         <Button variant={edit ? "default" : "outline"} onClick={() => setEdit((e) => !e)}>
           {edit ? <Check /> : <Pencil />}
           {edit ? "Concluir edição" : "Editar estrutura"}
@@ -144,7 +147,7 @@ export function SheetView() {
         </section>
       )}
 
-      <AiDialog open={aiOpen} onOpenChange={setAiOpen} />
+      {aiEnabled && <AiDialog open={aiOpen} onOpenChange={setAiOpen} />}
     </div>
   );
 }
