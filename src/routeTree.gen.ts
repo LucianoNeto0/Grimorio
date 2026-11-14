@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as DadosRouteImport } from './routes/dados'
 import { Route as PersonagensRouteImport } from './routes/personagens'
 import { Route as VisualRouteImport } from './routes/visual'
@@ -17,6 +18,11 @@ import { Route as VisualRouteImport } from './routes/visual'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AjudaRoute = AjudaRouteImport.update({
+  id: '/ajuda',
+  path: '/ajuda',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DadosRoute = DadosRouteImport.update({
@@ -37,12 +43,14 @@ const VisualRoute = VisualRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ajuda': typeof AjudaRoute
   '/dados': typeof DadosRoute
   '/personagens': typeof PersonagensRoute
   '/visual': typeof VisualRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ajuda': typeof AjudaRoute
   '/dados': typeof DadosRoute
   '/personagens': typeof PersonagensRoute
   '/visual': typeof VisualRoute
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ajuda': typeof AjudaRoute
   '/dados': typeof DadosRoute
   '/personagens': typeof PersonagensRoute
   '/visual': typeof VisualRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dados' | '/personagens' | '/visual'
+  fullPaths: '/' | '/ajuda' | '/dados' | '/personagens' | '/visual'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dados' | '/personagens' | '/visual'
-  id: '__root__' | '/' | '/dados' | '/personagens' | '/visual'
+  to: '/' | '/ajuda' | '/dados' | '/personagens' | '/visual'
+  id: '__root__' | '/' | '/ajuda' | '/dados' | '/personagens' | '/visual'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AjudaRoute: typeof AjudaRoute
   DadosRoute: typeof DadosRoute
   PersonagensRoute: typeof PersonagensRoute
   VisualRoute: typeof VisualRoute
@@ -76,6 +86,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ajuda': {
+      id: '/ajuda'
+      path: '/ajuda'
+      fullPath: '/ajuda'
+      preLoaderRoute: typeof AjudaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dados': {
@@ -104,6 +121,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AjudaRoute: AjudaRoute,
   DadosRoute: DadosRoute,
   PersonagensRoute: PersonagensRoute,
   VisualRoute: VisualRoute,

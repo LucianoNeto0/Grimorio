@@ -1,5 +1,5 @@
 ﻿import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, Dices, Palette, Save, Users } from "lucide-react";
+import { BookOpen, CircleHelp, Dices, Palette, Save, Users } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <Button asChild size="icon" variant="ghost">
+              <Link to="/ajuda" aria-label="Abrir tutorial" title="Ajuda e tutorial">
+                <CircleHelp />
+              </Link>
+            </Button>
             {ready && activePreset && (
               <Button
                 size="sm"
