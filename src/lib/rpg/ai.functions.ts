@@ -148,8 +148,6 @@ const systemInstruction =
   "Mantenha cada campo curto e com uma única informação. Bônus e regras vão nas descrições de habilidades; bônus e dano " +
   "dos itens vão nos campos bonus e dano. Não explique regras gerais do sistema.";
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 const list = (value: string | undefined, fallback: string[]) => {
   const models = value
     ?.split(",")
@@ -178,58 +176,49 @@ async function requestModels(
 ): Promise<ProviderResult> {
   let lastMessage = "O provedor não retornou uma resposta válida.";
 
-  modelLoop: for (const model of models) {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const startedAt = Date.now();
-      let response: Response;
-      try {
-        response = await send(model);
-      } catch (error) {
-        const timedOut = error instanceof Error && error.name === "TimeoutError";
-        lastMessage = timedOut ? "A solicitação expirou." : "Falha de rede ao chamar o provedor.";
-        console.error(`${provider} request failed`, {
-          model,
-          elapsedMs: Date.now() - startedAt,
-          timedOut,
-        });
-        break modelLoop;
-      }
-
-      const payload: unknown = await response.json().catch(() => null);
-      if (response.ok) {
-        const text = extract(payload)?.trim();
-        if (text) return { ok: true, text };
-        lastMessage = "O provedor respondeu sem texto.";
-        continue modelLoop;
-      }
-
-      const errorObject =
-        payload &&
-        typeof payload === "object" &&
-        "error" in payload &&
-        payload.error &&
-        typeof payload.error === "object"
-          ? payload.error
-          : undefined;
-      const providerMessage =
-        errorObject && "message" in errorObject && typeof errorObject.message === "string"
-          ? errorObject.message
-          : `HTTP ${response.status}`;
-      lastMessage = providerMessage;
-      console.error(`${provider} request rejected`, {
+  for (const model of models) {
+    const startedAt = Date.now();
+    let response: Response;
+    try {
+      response = await send(model);
+    } catch (error) {
+      const timedOut = error instanceof Error && error.name === "TimeoutError";
+      lastMessage = timedOut ? "A solicitação expirou." : "Falha de rede ao chamar o provedor.";
+      console.error(`${provider} request failed`, {
         model,
-        status: response.status,
         elapsedMs: Date.now() - startedAt,
-        message: providerMessage,
+        timedOut,
       });
-
-      if (response.status === 404 || response.status === 429) continue modelLoop;
-      if ([500, 502, 503, 504].includes(response.status) && attempt === 0) {
-        await sleep(500);
-        continue;
-      }
-      continue modelLoop;
+      break;
     }
+
+    const payload: unknown = await response.json().catch(() => null);
+    if (response.ok) {
+      const text = extract(payload)?.trim();
+      if (text) return { ok: true, text };
+      lastMessage = "O provedor respondeu sem texto.";
+      continue;
+    }
+
+    const errorObject =
+      payload &&
+      typeof payload === "object" &&
+      "error" in payload &&
+      payload.error &&
+      typeof payload.error === "object"
+        ? payload.error
+        : undefined;
+    const providerMessage =
+      errorObject && "message" in errorObject && typeof errorObject.message === "string"
+        ? errorObject.message
+        : `HTTP ${response.status}`;
+    lastMessage = providerMessage;
+    console.error(`${provider} request rejected`, {
+      model,
+      status: response.status,
+      elapsedMs: Date.now() - startedAt,
+      message: providerMessage,
+    });
   }
 
   return { ok: false, message: lastMessage };
@@ -345,11 +334,11 @@ export const generateCharacter = createServerFn({ method: "POST" })
 
     const geminiKey = process.env["GEMINI_API_KEY"]?.trim();
     if (geminiKey) {
-      const models = list(process.env["GEMINI_MODELS"], [
-        "gemini-3.8-flash",
-        "gemini-3.5-flash-lite",
-      ]);
-      attempts.push(() => callGemini(geminiKey, models, ideaPrompt));
+      // Use a single Gemini model per request to avoid spending extra RPM/RPD
+      // on model-by-model retries. The compatible provider below remains the
+      // cross-provider fallback.
+      const model = list(process.env["GEMINI_MODELS"], ["gemini-3.8-flash"])[0];
+      attempts.push(() => callGemini(geminiKey, [model], ideaPrompt));
     }
 
     const baseUrl = (process.env["AI_BASE_URL"] || "").trim().replace(/\/$/, "");
