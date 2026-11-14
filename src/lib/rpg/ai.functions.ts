@@ -1,4 +1,5 @@
 ﻿import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 const InputSchema = z.object({
@@ -48,6 +49,114 @@ export type GenerateResult =
 
 type ProviderResult = { ok: true; text: string } | { ok: false; message: string };
 type JsonSchema = Record<string, unknown>;
+
+const rateLimitScript = `
+local burstCount = tonumber(redis.call('GET', KEYS[1]) or '0')
+local dailyIpCount = tonumber(redis.call('GET', KEYS[2]) or '0')
+local globalDailyCount = tonumber(redis.call('GET', KEYS[3]) or '0')
+local burstLimit = tonumber(ARGV[1])
+local burstWindow = tonumber(ARGV[2])
+local dailyIpLimit = tonumber(ARGV[3])
+local dailyWindow = tonumber(ARGV[4])
+local globalDailyLimit = tonumber(ARGV[5])
+
+if burstCount >= burstLimit then
+  return {0, redis.call('TTL', KEYS[1]), 1}
+end
+if dailyIpCount >= dailyIpLimit then
+  return {0, redis.call('TTL', KEYS[2]), 2}
+end
+if globalDailyCount >= globalDailyLimit then
+  return {0, redis.call('TTL', KEYS[3]), 3}
+end
+
+if redis.call('INCR', KEYS[1]) == 1 then redis.call('EXPIRE', KEYS[1], burstWindow) end
+if redis.call('INCR', KEYS[2]) == 1 then redis.call('EXPIRE', KEYS[2], dailyWindow) end
+if redis.call('INCR', KEYS[3]) == 1 then redis.call('EXPIRE', KEYS[3], dailyWindow) end
+return {1, 0, 0}
+`;
+
+async function checkAiRateLimit(): Promise<
+  { allowed: true } | { allowed: false; message: string }
+> {
+  const redisUrl = process.env["UPSTASH_REDIS_REST_URL"]?.trim();
+  const redisToken = process.env["UPSTASH_REDIS_REST_TOKEN"]?.trim();
+  const production = process.env["NODE_ENV"] === "production";
+
+  if (!redisUrl || !redisToken) {
+    if (!production) return { allowed: true };
+    console.error("AI rate limit is not configured");
+    return { allowed: false, message: "A criacao com IA esta temporariamente indisponivel." };
+  }
+
+  const ip =
+    getRequestHeader("x-vercel-forwarded-for")?.split(",")[0]?.trim() ||
+    getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim();
+  if (!ip) {
+    console.error("AI rate limit could not identify the request IP");
+    return {
+      allowed: false,
+      message: "Nao foi possivel validar o limite de uso. Tente novamente.",
+    };
+  }
+
+  try {
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip));
+    const ipHash = Array.from(new Uint8Array(digest), (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join("");
+    const burstWindowSeconds = 10 * 60;
+    const dailyWindowSeconds = 24 * 60 * 60;
+    const globalDailyLimit = Number(process.env["AI_GLOBAL_DAILY_LIMIT"] || 15);
+    if (!Number.isInteger(globalDailyLimit) || globalDailyLimit < 1) {
+      console.error("AI_GLOBAL_DAILY_LIMIT must be a positive integer");
+      return { allowed: false, message: "A criacao com IA esta temporariamente indisponivel." };
+    }
+
+    const response = await fetch(redisUrl.replace(/\/$/, ""), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${redisToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify([
+        "EVAL",
+        rateLimitScript,
+        "3",
+        `grimorio:ai:ip:burst:${ipHash}`,
+        `grimorio:ai:ip:daily:${ipHash}`,
+        "grimorio:ai:global:daily",
+        "2",
+        String(burstWindowSeconds),
+        "5",
+        String(dailyWindowSeconds),
+        String(globalDailyLimit),
+      ]),
+      signal: AbortSignal.timeout(2_000),
+    });
+    const payload: unknown = await response.json().catch(() => null);
+    if (!response.ok || !payload || typeof payload !== "object" || !("result" in payload)) {
+      throw new Error(`Rate limit store returned HTTP ${response.status}`);
+    }
+
+    const result = payload.result;
+    if (!Array.isArray(result) || result[0] !== 1) {
+      const reason = Array.isArray(result) ? result[2] : undefined;
+      const message =
+        reason === 3
+          ? "A cota global de criacoes com IA foi atingida. Tente novamente mais tarde."
+          : reason === 2
+            ? "Voce atingiu seu limite de criacoes com IA. Tente novamente mais tarde."
+            : "Voce esta criando personagens muito rapido. Aguarde alguns minutos e tente novamente.";
+      return { allowed: false, message };
+    }
+
+    return { allowed: true };
+  } catch (error) {
+    console.error("AI rate limit check failed", error);
+    return { allowed: false, message: "A criacao com IA esta temporariamente indisponivel." };
+  }
+}
 
 const stringField = (description: string) => ({ type: "STRING", description }) as const;
 const namedNumber = (description: string) =>
@@ -329,6 +438,9 @@ function parseCharacter(text: string): GeneratedCharacter | null {
 export const generateCharacter = createServerFn({ method: "POST" })
   .validator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data }): Promise<GenerateResult> => {
+    const rateLimit = await checkAiRateLimit();
+    if (!rateLimit.allowed) return { ok: false, message: rateLimit.message };
+
     const ideaPrompt = `Sistema: ${data.system}\nNível: ${data.level}\nIdeia do jogador: ${data.idea}\n\nCrie a ficha completa.`;
     const attempts: Array<() => Promise<ProviderResult>> = [];
 
@@ -337,7 +449,8 @@ export const generateCharacter = createServerFn({ method: "POST" })
       // Use a single Gemini model per request to avoid spending extra RPM/RPD
       // on model-by-model retries. The compatible provider below remains the
       // cross-provider fallback.
-      const model = list(process.env["GEMINI_MODELS"], ["gemini-3.8-flash"])[0];
+      const model =
+        list(process.env["GEMINI_MODELS"], ["gemini-3.8-flash"])[0] ?? "gemini-3.8-flash";
       attempts.push(() => callGemini(geminiKey, [model], ideaPrompt));
     }
 

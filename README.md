@@ -11,6 +11,8 @@ npm install
 npm run dev
 ```
 
+Para limitar o uso da IA, crie um banco Redis REST na Upstash e configure `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN` no `.env` e na Vercel. O limite padrao e 2 geracoes por IP a cada 10 minutos, 5 por IP por janela de 24 horas e 15 geracoes globais por janela de 24 horas. Ajuste o teto global com `AI_GLOBAL_DAILY_LIMIT`. Em producao, sem Redis configurado ou disponivel, as chamadas de IA sao bloqueadas.
+
 Configure as chaves dos provedores de IA no `.env` local. Não use variáveis `VITE_` para segredos.
 
 ## Verificações
