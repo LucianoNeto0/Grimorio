@@ -79,8 +79,12 @@ return {1, 0, 0}
 async function checkAiRateLimit(): Promise<
   { allowed: true } | { allowed: false; message: string }
 > {
-  const redisUrl = process.env["UPSTASH_REDIS_REST_URL"]?.trim();
-  const redisToken = process.env["UPSTASH_REDIS_REST_TOKEN"]?.trim();
+  const redisUrl =
+    process.env["UPSTASH_REDIS_REST_URL"]?.trim() ||
+    process.env["UPSTASH_REDIS_REST_KV_REST_API_URL"]?.trim();
+  const redisToken =
+    process.env["UPSTASH_REDIS_REST_TOKEN"]?.trim() ||
+    process.env["UPSTASH_REDIS_REST_KV_REST_API_TOKEN"]?.trim();
   const production = process.env["NODE_ENV"] === "production";
 
   if (!redisUrl || !redisToken) {
