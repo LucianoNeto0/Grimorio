@@ -1,53 +1,116 @@
 # Grimório
 
-Ficha de RPG com dados, personagens salvos, temas e criação de personagens com IA.
+Aplicação web e Android para criação e gerenciamento de fichas de RPG. O Grimório combina dados de personagens, rolagens, temas visuais e geração de personagens com IA em uma experiência única para jogadores e mestres.
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/) [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=111111)](https://react.dev/) [![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com/)
+
+> Projeto de portfólio em evolução, com foco em produto, integração de IA, validação de dados e distribuição multiplataforma.
+
+## Destaques
+
+- Criação de fichas de personagem com nome, raça, classe, nível, atributos, perícias, habilidades, itens e história.
+- Geração assistida por IA a partir de uma ideia curta, sistema e nível informados pelo usuário.
+- Resposta estruturada em JSON com schema explícito e validação por Zod.
+- Dados de fichas e preferências visuais persistidos localmente no navegador ou no aparelho.
+- Temas visuais, rolagem de dados, telas de ajuda e navegação por rotas.
+- Versão web com IA e versão Android offline sem o recurso de geração por IA.
+- Deploy web na Vercel e geração de APK por GitHub Actions.
+- Limitação de uso da IA por IP e por cota global usando Redis REST/Upstash.
+
+## Arquitetura resumida
+
+A interface é construída em React com TypeScript e TanStack Start. A camada de servidor mantém as chamadas aos provedores de IA fora do cliente. O fluxo de geração valida a entrada, aplica limites de uso, chama o Gemini ou uma API compatível, extrai o JSON retornado e valida o resultado antes de entregá-lo à interface.
+
+A configuração `vite.config.ts` diferencia os alvos de build. O build web mantém a camada de servidor e a IA; o build Android gera uma SPA estática com Capacitor, sem incluir chaves ou chamadas de IA no aplicativo.
+
+## Tecnologias
+
+- React 19 e TypeScript.
+- TanStack Start e TanStack Router.
+- Vite e Nitro com preset Vercel.
+- Tailwind CSS e Radix UI.
+- Google Gemini com saída JSON estruturada.
+- Zod para validação de entrada e resposta.
+- Redis REST/Upstash para rate limiting.
+- Capacitor para empacotamento Android.
+- Vitest, Testing Library, ESLint e Prettier.
+
+## Requisitos
+
+- Node.js 22 ou superior.
+- npm ou Bun.
+- Para desenvolvimento com IA: uma chave do provedor configurada no ambiente do servidor.
+- Para limites de produção: Redis REST/Upstash configurado.
+- Para gerar o APK localmente: Android Studio e Android SDK.
 
 ## Desenvolvimento local
 
-Requisitos: Node.js e npm.
-
-```sh
+```bash
+git clone https://github.com/LucianoNeto0/Grimorio.git
+cd Grimorio
 npm install
+cp .env.example .env
 npm run dev
 ```
 
-## Versões e commits
+Nunca use variáveis `VITE_` para armazenar chaves secretas. Variáveis de provedores de IA devem permanecer no ambiente do servidor.
 
-O mesmo repositório gera as duas versões:
+## Variáveis de ambiente
 
-- `[web] ...`: mantém a IA e publica na Vercel. A branch `main` continua sendo a branch de produção.
-- `[apk] ...`: gera a versão Android sem IA. A Vercel ignora esse commit.
-- `[ambos] ...`: atualiza a versão web e gera um APK como artefato do GitHub Actions.
+Consulte `.env.example` para os nomes esperados. Em produção, o rate limiting usa uma destas combinações de variáveis do Upstash:
 
-Use esses marcadores no início da primeira linha do commit. Se não houver marcador, a Vercel publica normalmente e o APK não é gerado. O build Android pode ser baixado em **Actions → Build APK → Artifacts**. O APK do workflow é de depuração; para publicar na Play Store ainda será necessário configurar assinatura de release.
-
-Para a Vercel reconhecer o marcador `[apk]`, confirme em **Project Settings → Environment Variables** que **Automatically expose System Environment Variables** está habilitado. O `ignoreCommand` do `vercel.json` usa `VERCEL_GIT_COMMIT_MESSAGE`; se o marcador não estiver disponível, o comportamento seguro é continuar o deploy web.
-
-### Gerar o APK localmente
-
-Requer Android Studio, Android SDK e Node.js 22 ou superior.
-
-```sh
-npm run build:apk
-npm run android:open
+```text
+UPSTASH_REDIS_REST_URL
+UPSTASH_REDIS_REST_TOKEN
 ```
 
-O alvo APK usa uma shell SPA estática, mantém as fichas no armazenamento local do aparelho e não inclui o recurso de criação com IA. O emblema da aplicação também é usado como ícone Android; para gerar os tamanhos nativos de novo, execute `npm run android:icons`. O build web mantém a IA no servidor da Vercel; nenhuma chave Gemini é incluída no APK.
+ou os nomes gerados pela integração:
 
-Para limitar o uso da IA, crie um banco Redis REST na Upstash e configure as variaveis REST do Upstash na Vercel. O servidor aceita `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` e os nomes gerados pela integracao `UPSTASH_REDIS_REST_KV_REST_API_URL`/`UPSTASH_REDIS_REST_KV_REST_API_TOKEN`. O limite padrao e 2 geracoes por IP a cada 10 minutos, 5 por IP por janela de 24 horas e 15 geracoes globais por janela de 24 horas. Ajuste o teto global com `AI_GLOBAL_DAILY_LIMIT`. Em producao, sem Redis configurado ou disponivel, as chamadas de IA sao bloqueadas.
+```text
+UPSTASH_REDIS_REST_KV_REST_API_URL
+UPSTASH_REDIS_REST_KV_REST_API_TOKEN
+```
 
-Configure as chaves dos provedores de IA no `.env` local. Não use variáveis `VITE_` para segredos.
+O limite padrão é de 2 gerações por IP a cada 10 minutos, 5 gerações por IP em 24 horas e 15 gerações globais em 24 horas. O teto global pode ser ajustado com `AI_GLOBAL_DAILY_LIMIT`. Em produção, se o Redis não estiver configurado ou estiver indisponível, as chamadas de IA são bloqueadas.
 
 ## Verificações
 
-```sh
+```bash
 npm run lint
 npm test
 npm run build
 ```
 
-## Tecnologias
+## Web e Android
 
-- TanStack Start
-- React e TypeScript
-- Tailwind CSS
+O projeto usa marcadores no início da primeira linha da mensagem de commit:
+
+- `[web]`: mantém a IA e publica a versão web na Vercel.
+- `[apk]`: gera a versão Android sem IA; a Vercel ignora esse commit.
+- `[ambos]`: atualiza a web e gera o APK como artefato do GitHub Actions.
+
+Para gerar a versão Android localmente:
+
+```bash
+npm run build:apk
+npm run android:open
+```
+
+O APK produzido pelo workflow é de depuração. Para distribuição na Play Store ainda é necessário configurar assinatura de release.
+
+## Segurança e privacidade
+
+As chaves de IA não devem ser incluídas no bundle web nem no APK. A geração passa pelo servidor e o rate limiting usa um hash do endereço IP para formar as chaves do Redis. Ainda assim, não envie segredos, dados pessoais ou conteúdo privado para a aplicação sem avaliar o provedor de IA e sua política de retenção.
+
+## Status
+
+Aplicação funcional em evolução, com distribuição web e Android. O próximo passo natural é ampliar a cobertura de testes, adicionar uma demonstração hospedada e documentar versões dos sistemas de RPG suportados.
+
+## Autor
+
+Luciano Cardoso do Rêgo Neto
+GitHub: [@LucianoNeto0](https://github.com/LucianoNeto0)
+
+## Licença
+
+Este projeto é disponibilizado publicamente para fins de demonstração e avaliação de portfólio. Todos os direitos são reservados ao autor. Consulte o arquivo `LICENSE` antes de reutilizar qualquer parte do projeto.
