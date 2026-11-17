@@ -1,5 +1,5 @@
 export type HeadField = { id: string; l: string; v: string };
-export type NumRow = { id: string; l: string; v: number | string };
+export type NumRow = { id: string; l: string; v: number | string; die?: number };
 /** `tags` hold short facts (attack bonus, damage); `d` a one-line description. */
 export type ListRow = { id: string; l: string; v: string; tags?: string[]; d?: string };
 /** Ability / trait: short name, where it comes from (Raça, Classe…), and its description. */

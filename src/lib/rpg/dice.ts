@@ -30,27 +30,41 @@ export function rollPool(
   return { total, text: parts.join(" + ") + fmtMod(mod) + ` = ${total}` };
 }
 
-/** Rolls 2d20 and keeps the highest (advantage) or lowest (disadvantage). */
-export function rollAdvantage(dir: 1 | -1, mod: number, rng: Rng = Math.random): RollResult {
-  const a = rollDie(20, rng);
-  const b = rollDie(20, rng);
+/** Rolls two dice of the chosen size and keeps the highest or lowest result. */
+export function rollAdvantage(
+  dir: 1 | -1,
+  mod: number,
+  sidesOrRng: number | Rng = 20,
+  providedRng: Rng = Math.random,
+): RollResult {
+  const sides = typeof sidesOrRng === "number" ? sidesOrRng : 20;
+  const rng = typeof sidesOrRng === "function" ? sidesOrRng : providedRng;
+  const a = rollDie(sides, rng);
+  const b = rollDie(sides, rng);
   const kept = dir > 0 ? Math.max(a, b) : Math.min(a, b);
   const total = kept + mod;
   const label = dir > 0 ? "Vantagem" : "Desvantagem";
   return {
     total,
-    text: `${label}: d20 [${a}, ${b}] → ${kept}${fmtMod(mod)} = ${total}`,
-    crit: kept === 20 ? "max" : kept === 1 ? "min" : undefined,
+    text: `${label}: d${sides} [${a}, ${b}] → ${kept}${fmtMod(mod)} = ${total}`,
+    crit: kept === sides ? "max" : kept === 1 ? "min" : undefined,
   };
 }
 
-/** d20 + the row's value, used by the dice button on attributes and skills. */
-export function rollCheck(label: string, value: number, rng: Rng = Math.random): RollResult {
-  const d = rollDie(20, rng);
+/** Rolls the selected test die plus the row's attribute or skill modifier. */
+export function rollCheck(
+  label: string,
+  value: number,
+  sidesOrRng: number | Rng = 20,
+  providedRng: Rng = Math.random,
+): RollResult {
+  const sides = typeof sidesOrRng === "number" ? sidesOrRng : 20;
+  const rng = typeof sidesOrRng === "function" ? sidesOrRng : providedRng;
+  const d = rollDie(sides, rng);
   const total = d + value;
   return {
     total,
-    text: `${label}: d20 [${d}]${fmtMod(value)} = ${total}`,
-    crit: d === 20 ? "max" : d === 1 ? "min" : undefined,
+    text: `${label}: d${sides} [${d}]${fmtMod(value)} = ${total}`,
+    crit: d === sides ? "max" : d === 1 ? "min" : undefined,
   };
 }

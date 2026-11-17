@@ -1,94 +1,208 @@
-import { ArrowDown, ArrowUp, Dices, Minus, Plus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Dices, Minus, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { rollCheck } from "@/lib/rpg/dice";
-import { BAR_COLORS, clampBar, uid, type Section, type Sheet } from "@/lib/rpg/sheet";
+import { DICE, rollCheck } from "@/lib/rpg/dice";
+import { BAR_COLORS, clampBar, clone, uid, type Section } from "@/lib/rpg/sheet";
 import { useRpg } from "@/lib/rpg/useRpg";
 import { cn } from "@/lib/utils";
 
-import { ConfirmButton } from "./ConfirmButton";
 import { showRoll } from "./rollToast";
 
-type Props = { section: Section; index: number; edit: boolean };
+type Props = { section: Section; index: number };
+type SectionChange = (change: (section: Section) => void) => void;
 
 /** Finds the live section inside a draft by id. */
-const pick = (d: Sheet, id: string) => d.secs.find((s) => s.id === id);
+const sectionIndex = (sections: Section[], id: string) => sections.findIndex((s) => s.id === id);
 
-export function SectionCard({ section, index, edit }: Props) {
+export function SectionCard({ section, index }: Props) {
   const { update, sheet } = useRpg();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<Section>(() => clone(section));
+  const [confirm, setConfirm] = useState<"edit" | "save" | "discard" | "delete" | null>(null);
   const last = index === sheet.secs.length - 1;
+  const shown = editing ? draft : section;
+
+  const change: SectionChange = (apply) => {
+    if (editing) {
+      setDraft((current) => {
+        const next = clone(current);
+        apply(next);
+        return next;
+      });
+      return;
+    }
+    update((current) => {
+      const live = current.secs[sectionIndex(current.secs, section.id)];
+      if (live) apply(live);
+    });
+  };
 
   const move = (dir: -1 | 1) =>
     update((d) => {
-      const j = index + dir;
-      const a = d.secs[index];
+      const currentIndex = sectionIndex(d.secs, section.id);
+      const j = currentIndex + dir;
+      const a = d.secs[currentIndex];
       const b = d.secs[j];
       if (!a || !b) return;
-      d.secs[index] = b;
+      d.secs[currentIndex] = b;
       d.secs[j] = a;
     });
 
+  const confirmAction = () => {
+    if (confirm === "edit") {
+      setDraft(clone(section));
+      setEditing(true);
+    } else if (confirm === "save") {
+      update((d) => {
+        const i = sectionIndex(d.secs, section.id);
+        if (i >= 0) d.secs[i] = clone(draft);
+      });
+      setEditing(false);
+    } else if (confirm === "discard") {
+      setDraft(clone(section));
+      setEditing(false);
+    } else if (confirm === "delete") {
+      update((d) => {
+        d.secs = d.secs.filter((s) => s.id !== section.id);
+      });
+    }
+    setConfirm(null);
+  };
+
+  const copy = {
+    edit: {
+      title: "Editar esta seção?",
+      description: `Você vai editar somente “${section.t}”. As mudanças ficam em rascunho até confirmar o salvamento.`,
+      action: "Editar seção",
+    },
+    save: {
+      title: "Salvar as alterações?",
+      description: `As mudanças em “${draft.t}” serão aplicadas à ficha.`,
+      action: "Salvar alterações",
+    },
+    discard: {
+      title: "Descartar as alterações?",
+      description:
+        "O rascunho desta seção será descartado e a ficha continuará como estava antes da edição.",
+      action: "Descartar",
+    },
+    delete: {
+      title: "Excluir esta seção?",
+      description: `“${section.t}” e seus dados serão removidos da ficha.`,
+      action: "Excluir seção",
+    },
+  } as const;
+  const prompt = confirm ? copy[confirm] : null;
+
   return (
-    <section className="panel p-4 sm:p-5">
-      {edit ? (
-        <div className="mb-4 flex items-center gap-1.5">
-          <input
-            className="field-bare section-title flex-1"
-            value={section.t}
-            aria-label="Nome da seção"
-            onChange={(e) => update((d) => void (pick(d, section.id)!.t = e.target.value))}
-          />
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            disabled={index === 0}
-            onClick={() => move(-1)}
-            aria-label="Mover para cima"
-          >
-            <ArrowUp />
-          </Button>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            disabled={last}
-            onClick={() => move(1)}
-            aria-label="Mover para baixo"
-          >
-            <ArrowDown />
-          </Button>
-          <ConfirmButton
-            size="sm"
-            variant="ghost"
-            confirmLabel="Apagar?"
-            onConfirm={() => update((d) => void d.secs.splice(index, 1))}
-            aria-label="Apagar seção"
-          >
-            <Trash2 />
-          </ConfirmButton>
+    <section className="panel p-4 sm:p-5" data-section-id={section.id}>
+      {editing ? (
+        <div className="mb-4">
+          <div className="flex items-center gap-1.5">
+            <input
+              className="field-bare section-title min-w-0 flex-1"
+              value={shown.t}
+              aria-label="Nome da seção"
+              onChange={(e) => change((s) => void (s.t = e.target.value))}
+            />
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              disabled={index === 0}
+              onClick={() => move(-1)}
+              aria-label="Mover para cima"
+            >
+              <ArrowUp />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              disabled={last}
+              onClick={() => move(1)}
+              aria-label="Mover para baixo"
+            >
+              <ArrowDown />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              onClick={() => setConfirm("delete")}
+              aria-label="Apagar seção"
+            >
+              <Trash2 />
+            </Button>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => setConfirm("save")}>
+              Salvar alterações
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setConfirm("discard")}>
+              Cancelar edição
+            </Button>
+          </div>
         </div>
       ) : (
-        <h2 className="section-title mb-4">{section.t}</h2>
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <h2 className="section-title">{section.t}</h2>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            aria-label={`Editar seção ${section.t}`}
+            title={`Editar seção ${section.t}`}
+            onClick={() => setConfirm("edit")}
+          >
+            <Pencil />
+          </Button>
+        </div>
       )}
 
-      {section.type === "bar" && <BarSection section={section} edit={edit} />}
-      {section.type === "num" && <NumSection section={section} edit={edit} />}
-      {section.type === "list" && <ListSection section={section} edit={edit} />}
-      {section.type === "feat" && <FeatSection section={section} edit={edit} />}
-      {section.type === "text" && (
+      {shown.type === "bar" && <BarSection section={shown} edit={editing} change={change} />}
+      {shown.type === "num" && <NumSection section={shown} edit={editing} change={change} />}
+      {shown.type === "list" && <ListSection section={shown} edit={editing} change={change} />}
+      {shown.type === "feat" && <FeatSection section={shown} edit={editing} change={change} />}
+      {shown.type === "text" && (
         <Textarea
-          value={section.text}
+          value={shown.text}
+          readOnly={!editing}
           placeholder="Escreva aqui…"
-          className="min-h-32 resize-y rounded-xl bg-background/40 text-[15px] leading-relaxed"
+          className="min-h-32 resize-y rounded-xl bg-background/40 text-[15px] leading-relaxed read-only:border-transparent read-only:px-0 read-only:py-0"
           onChange={(e) =>
-            update((d) => {
-              const s = pick(d, section.id);
-              if (s?.type === "text") s.text = e.target.value;
+            change((s) => {
+              if (s.type === "text") s.text = e.target.value;
             })
           }
         />
       )}
+
+      <Dialog open={confirm !== null} onOpenChange={(open) => !open && setConfirm(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{prompt?.title}</DialogTitle>
+            <DialogDescription>{prompt?.description}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirm(null)}>
+              Voltar
+            </Button>
+            <Button
+              variant={confirm === "delete" || confirm === "discard" ? "destructive" : "default"}
+              onClick={confirmAction}
+            >
+              {prompt?.action}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
@@ -96,22 +210,22 @@ export function SectionCard({ section, index, edit }: Props) {
 function BarSection({
   section,
   edit,
+  change,
 }: {
   section: Extract<Section, { type: "bar" }>;
   edit: boolean;
+  change: SectionChange;
 }) {
-  const { update } = useRpg();
   const [amount, setAmount] = useState<Record<string, string>>({});
 
   const setRow = (
     rid: string,
     fn: (r: Extract<Section, { type: "bar" }>["rows"][number]) => void,
   ) =>
-    update((d) => {
-      const s = pick(d, section.id);
-      if (s?.type !== "bar") return;
-      const r = s.rows.find((x) => x.id === rid);
-      if (r) fn(r);
+    change((s) => {
+      if (s.type !== "bar") return;
+      const row = s.rows.find((x) => x.id === rid);
+      if (row) fn(row);
     });
 
   return (
@@ -155,9 +269,8 @@ function BarSection({
                   variant="ghost"
                   aria-label="Remover barra"
                   onClick={() =>
-                    update((d) => {
-                      const s = pick(d, section.id);
-                      if (s?.type === "bar") s.rows = s.rows.filter((x) => x.id !== r.id);
+                    change((s) => {
+                      if (s.type === "bar") s.rows = s.rows.filter((x) => x.id !== r.id);
                     })
                   }
                 >
@@ -219,9 +332,8 @@ function BarSection({
           size="sm"
           variant="soft"
           onClick={() =>
-            update((d) => {
-              const s = pick(d, section.id);
-              if (s?.type === "bar")
+            change((s) => {
+              if (s.type === "bar")
                 s.rows.push({
                   id: uid(),
                   l: "Nova barra",
@@ -242,24 +354,31 @@ function BarSection({
 function NumSection({
   section,
   edit,
+  change,
 }: {
   section: Extract<Section, { type: "num" }>;
   edit: boolean;
+  change: SectionChange;
 }) {
-  const { update, pushRoll } = useRpg();
+  const { pushRoll } = useRpg();
   // Short labels (FOR, DES…) read best as tiles; longer ones as a list.
   const tiles = !edit && section.rows.length > 0 && section.rows.every((r) => r.l.length <= 4);
 
   const setVal = (rid: string, v: string) =>
-    update((d) => {
-      const s = pick(d, section.id);
-      if (s?.type !== "num") return;
-      const r = s.rows.find((x) => x.id === rid);
-      if (r) r.v = v;
+    change((s) => {
+      if (s.type !== "num") return;
+      const row = s.rows.find((x) => x.id === rid);
+      if (row) row.v = v;
     });
 
-  const roll = (label: string, v: number | string) => {
-    const r = rollCheck(label || "Teste", parseInt(String(v)) || 0);
+  const firstDie = section.rows[0]?.die ?? 20;
+  const sharedDie =
+    section.rows.length > 0 && section.rows.every((row) => (row.die ?? 20) === firstDie)
+      ? String(firstDie)
+      : "";
+
+  const roll = (label: string, v: number | string, sides = 20) => {
+    const r = rollCheck(label || "Teste", parseInt(String(v)) || 0, sides);
     pushRoll(r);
     showRoll(r);
   };
@@ -282,11 +401,11 @@ function NumSection({
             />
             <button
               type="button"
-              onClick={() => roll(r.l, r.v)}
+              onClick={() => roll(r.l, r.v, r.die ?? 20)}
               className="mt-1 flex items-center gap-1 rounded-full bg-primary-soft px-2.5 py-0.5 text-[11px] font-bold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
-              aria-label={`Rolar d20 + ${r.l}`}
+              aria-label={`Rolar d${r.die ?? 20} + ${r.l}`}
             >
-              <Dices className="size-3" /> d20
+              <Dices className="size-3" /> d{r.die ?? 20}
             </button>
           </div>
         ))}
@@ -295,6 +414,23 @@ function NumSection({
 
   return (
     <div className="divide-y divide-border">
+      {edit && (
+        <div className="flex items-center justify-between gap-3 pb-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">Dado para todos os atributos</p>
+            <p className="text-xs text-muted-foreground">Aplica a escolha a todos nesta seção.</p>
+          </div>
+          <DiePicker
+            value={sharedDie ? Number(sharedDie) : null}
+            label="Dado para todos os atributos"
+            onChange={(sides) =>
+              change((s) => {
+                if (s.type === "num") s.rows.forEach((row) => void (row.die = sides));
+              })
+            }
+          />
+        </div>
+      )}
       {section.rows.map((r) => (
         <div key={r.id} className="flex items-center gap-2 py-2">
           {edit ? (
@@ -303,10 +439,11 @@ function NumSection({
               value={r.l}
               placeholder="Nome"
               onChange={(e) =>
-                update((d) => {
-                  const s = pick(d, section.id);
-                  const row = s?.type === "num" ? s.rows.find((x) => x.id === r.id) : undefined;
-                  if (row) row.l = e.target.value;
+                change((s) => {
+                  if (s.type === "num") {
+                    const row = s.rows.find((x) => x.id === r.id);
+                    if (row) row.l = e.target.value;
+                  }
                 })
               }
             />
@@ -322,27 +459,43 @@ function NumSection({
             onChange={(e) => setVal(r.id, e.target.value)}
           />
           {edit ? (
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              aria-label="Remover"
-              onClick={() =>
-                update((d) => {
-                  const s = pick(d, section.id);
-                  if (s?.type === "num") s.rows = s.rows.filter((x) => x.id !== r.id);
-                })
-              }
-            >
-              <X />
-            </Button>
+            <>
+              <DiePicker
+                value={r.die ?? 20}
+                label={`Dado de teste para ${r.l || "atributo"}`}
+                onChange={(sides) =>
+                  change((s) => {
+                    if (s.type === "num") {
+                      const row = s.rows.find((x) => x.id === r.id);
+                      if (row) row.die = sides;
+                    }
+                  })
+                }
+                compact
+              />
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label={`Remover ${r.l || "atributo"}`}
+                onClick={() =>
+                  change((s) => {
+                    if (s.type === "num") s.rows = s.rows.filter((x) => x.id !== r.id);
+                  })
+                }
+              >
+                <X />
+              </Button>
+            </>
           ) : (
             <Button
               size="icon-sm"
               variant="soft"
-              onClick={() => roll(r.l, r.v)}
-              aria-label={`Rolar d20 + ${r.l}`}
+              onClick={() => roll(r.l, r.v, r.die ?? 20)}
+              aria-label={`Rolar d${r.die ?? 20} + ${r.l}`}
             >
-              <Dices />
+              <span className="flex items-center gap-1">
+                <Dices />d{r.die ?? 20}
+              </span>
             </Button>
           )}
         </div>
@@ -353,9 +506,9 @@ function NumSection({
             size="sm"
             variant="soft"
             onClick={() =>
-              update((d) => {
-                const s = pick(d, section.id);
-                if (s?.type === "num") s.rows.push({ id: uid(), l: "", v: 0 });
+              change((s) => {
+                if (s.type === "num")
+                  s.rows.push({ id: uid(), l: "", v: 0, die: s.rows[0]?.die ?? 20 });
               })
             }
           >
@@ -367,6 +520,61 @@ function NumSection({
   );
 }
 
+function DiePicker({
+  value,
+  label,
+  onChange,
+  compact = false,
+}: {
+  value: number | null;
+  label: string;
+  onChange: (sides: number) => void;
+  compact?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className={compact ? "h-8 min-w-12 px-2" : "h-9 min-w-20 px-3"}
+        aria-label={label}
+        title={label}
+        onClick={() => setOpen(true)}
+      >
+        {value ? `d${value}` : "Escolher"}
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>{label}</DialogTitle>
+            <DialogDescription>Escolha um dos dados disponíveis.</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-3 gap-2">
+            {DICE.map((sides) => (
+              <Button
+                key={sides}
+                type="button"
+                size="lg"
+                variant={value === sides ? "default" : "outline"}
+                className="h-12 text-base"
+                onClick={() => {
+                  onChange(sides);
+                  setOpen(false);
+                }}
+              >
+                d{sides}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 const CHIP =
   "rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-bold leading-tight text-primary";
 /** Multi-line text that grows with its content instead of scrolling sideways. */
@@ -375,29 +583,29 @@ const GROW = "w-full resize-none bg-transparent outline-none [field-sizing:conte
 function ListSection({
   section,
   edit,
+  change,
 }: {
   section: Extract<Section, { type: "list" }>;
   edit: boolean;
+  change: SectionChange;
 }) {
-  const { update } = useRpg();
   const [draft, setDraft] = useState("");
 
   const setRow = (
     rid: string,
     fn: (r: Extract<Section, { type: "list" }>["rows"][number]) => void,
   ) =>
-    update((d) => {
-      const s = pick(d, section.id);
-      const row = s?.type === "list" ? s.rows.find((x) => x.id === rid) : undefined;
+    change((s) => {
+      if (s.type !== "list") return;
+      const row = s.rows.find((x) => x.id === rid);
       if (row) fn(row);
     });
 
   const add = () => {
     const name = draft.trim();
     if (!name) return;
-    update((d) => {
-      const s = pick(d, section.id);
-      if (s?.type === "list") s.rows.push({ id: uid(), l: name, v: "1" });
+    change((s) => {
+      if (s.type === "list") s.rows.push({ id: uid(), l: name, v: "1" });
     });
     setDraft("");
   };
@@ -413,12 +621,16 @@ function ListSection({
           return (
             <li key={r.id} className="flex items-start gap-2 py-2">
               <div className="min-w-0 flex-1">
-                <input
-                  className="field-bare border-transparent font-semibold"
-                  value={r.l}
-                  placeholder="Item"
-                  onChange={(e) => setRow(r.id, (x) => void (x.l = e.target.value))}
-                />
+                {edit ? (
+                  <input
+                    className="field-bare border-transparent font-semibold"
+                    value={r.l}
+                    placeholder="Item"
+                    onChange={(e) => setRow(r.id, (x) => void (x.l = e.target.value))}
+                  />
+                ) : (
+                  <p className="font-semibold">{r.l || "Item sem nome"}</p>
+                )}
                 {edit ? (
                   <input
                     className="field-bare mt-1 text-xs"
@@ -438,7 +650,7 @@ function ListSection({
                     </div>
                   )
                 )}
-                {(edit || r.d) && (
+                {edit ? (
                   <textarea
                     rows={1}
                     className={cn(
@@ -450,7 +662,9 @@ function ListSection({
                     aria-label={`Descrição de ${r.l}`}
                     onChange={(e) => setRow(r.id, (x) => void (x.d = e.target.value))}
                   />
-                )}
+                ) : r.d ? (
+                  <p className="mt-1 text-sm leading-snug text-muted-foreground">{r.d}</p>
+                ) : null}
               </div>
               <span className="pt-2 text-xs text-muted-foreground">×</span>
               <input
@@ -460,41 +674,44 @@ function ListSection({
                 aria-label={`Quantidade de ${r.l}`}
                 onChange={(e) => setRow(r.id, (x) => void (x.v = e.target.value))}
               />
-              <Button
-                size="icon-sm"
-                variant="ghost"
-                aria-label={`Remover ${r.l}`}
-                className="mt-0.5 text-muted-foreground hover:text-destructive"
-                onClick={() =>
-                  update((d) => {
-                    const s = pick(d, section.id);
-                    if (s?.type === "list") s.rows = s.rows.filter((x) => x.id !== r.id);
-                  })
-                }
-              >
-                <X />
-              </Button>
+              {edit && (
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label={`Remover ${r.l}`}
+                  className="mt-0.5 text-muted-foreground hover:text-destructive"
+                  onClick={() =>
+                    change((s) => {
+                      if (s.type === "list") s.rows = s.rows.filter((x) => x.id !== r.id);
+                    })
+                  }
+                >
+                  <X />
+                </Button>
+              )}
             </li>
           );
         })}
       </ul>
-      <form
-        className="mt-3 flex gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          add();
-        }}
-      >
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Novo item…"
-          className="h-9 flex-1 rounded-lg border border-input bg-background/50 px-3 text-sm outline-none focus:border-primary"
-        />
-        <Button type="submit" size="sm" variant="soft" disabled={!draft.trim()} className="h-9">
-          <Plus /> Adicionar
-        </Button>
-      </form>
+      {edit && (
+        <form
+          className="mt-3 flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            add();
+          }}
+        >
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Novo item…"
+            className="h-9 flex-1 rounded-lg border border-input bg-background/50 px-3 text-sm outline-none focus:border-primary"
+          />
+          <Button type="submit" size="sm" variant="soft" disabled={!draft.trim()} className="h-9">
+            <Plus /> Adicionar
+          </Button>
+        </form>
+      )}
     </div>
   );
 }
@@ -502,19 +719,19 @@ function ListSection({
 function FeatSection({
   section,
   edit,
+  change,
 }: {
   section: Extract<Section, { type: "feat" }>;
   edit: boolean;
+  change: SectionChange;
 }) {
-  const { update } = useRpg();
-
   const setRow = (
     rid: string,
     fn: (r: Extract<Section, { type: "feat" }>["rows"][number]) => void,
   ) =>
-    update((d) => {
-      const s = pick(d, section.id);
-      const row = s?.type === "feat" ? s.rows.find((x) => x.id === rid) : undefined;
+    change((s) => {
+      if (s.type !== "feat") return;
+      const row = s.rows.find((x) => x.id === rid);
       if (row) fn(row);
     });
 
@@ -527,12 +744,16 @@ function FeatSection({
         {section.rows.map((r) => (
           <div key={r.id} className="rounded-xl border border-border bg-background/40 p-3">
             <div className="flex items-center gap-2">
-              <input
-                className="field-bare min-w-0 flex-1 border-transparent font-semibold"
-                value={r.l}
-                placeholder="Nome da habilidade"
-                onChange={(e) => setRow(r.id, (x) => void (x.l = e.target.value))}
-              />
+              {edit ? (
+                <input
+                  className="field-bare min-w-0 flex-1 border-transparent font-semibold"
+                  value={r.l}
+                  placeholder="Nome da habilidade"
+                  onChange={(e) => setRow(r.id, (x) => void (x.l = e.target.value))}
+                />
+              ) : (
+                <span className="min-w-0 flex-1 font-semibold">{r.l || "Habilidade sem nome"}</span>
+              )}
               {edit ? (
                 <>
                   <input
@@ -547,9 +768,8 @@ function FeatSection({
                     variant="ghost"
                     aria-label={`Remover ${r.l}`}
                     onClick={() =>
-                      update((d) => {
-                        const s = pick(d, section.id);
-                        if (s?.type === "feat") s.rows = s.rows.filter((x) => x.id !== r.id);
+                      change((s) => {
+                        if (s.type === "feat") s.rows = s.rows.filter((x) => x.id !== r.id);
                       })
                     }
                   >
@@ -560,32 +780,37 @@ function FeatSection({
                 r.tag.trim() && <span className={cn(CHIP, "shrink-0")}>{r.tag}</span>
               )}
             </div>
-            <textarea
-              rows={1}
-              className={cn(
-                GROW,
-                "mt-1 text-sm leading-relaxed text-muted-foreground focus:text-foreground",
-              )}
-              value={r.d}
-              placeholder="O que essa habilidade faz…"
-              aria-label={`Descrição de ${r.l}`}
-              onChange={(e) => setRow(r.id, (x) => void (x.d = e.target.value))}
-            />
+            {edit ? (
+              <textarea
+                rows={1}
+                className={cn(
+                  GROW,
+                  "mt-1 text-sm leading-relaxed text-muted-foreground focus:text-foreground",
+                )}
+                value={r.d}
+                placeholder="O que essa habilidade faz…"
+                aria-label={`Descrição de ${r.l}`}
+                onChange={(e) => setRow(r.id, (x) => void (x.d = e.target.value))}
+              />
+            ) : r.d ? (
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{r.d}</p>
+            ) : null}
           </div>
         ))}
       </div>
-      <Button
-        size="sm"
-        variant="soft"
-        onClick={() =>
-          update((d) => {
-            const s = pick(d, section.id);
-            if (s?.type === "feat") s.rows.push({ id: uid(), l: "", tag: "", d: "" });
-          })
-        }
-      >
-        <Plus /> Habilidade
-      </Button>
+      {edit && (
+        <Button
+          size="sm"
+          variant="soft"
+          onClick={() =>
+            change((s) => {
+              if (s.type === "feat") s.rows.push({ id: uid(), l: "", tag: "", d: "" });
+            })
+          }
+        >
+          <Plus /> Habilidade
+        </Button>
+      )}
     </div>
   );
 }

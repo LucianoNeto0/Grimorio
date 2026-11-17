@@ -14,6 +14,7 @@ export function DiceView() {
   const { history, pushRoll, clearHistory } = useRpg();
   const [pool, setPool] = useState<Record<number, number>>({});
   const [mod, setMod] = useState(0);
+  const [advantageDie, setAdvantageDie] = useState(20);
   const [last, setLast] = useState<(RollResult & { key: string }) | null>(null);
 
   const add = (n: number, d: number) =>
@@ -150,12 +151,29 @@ export function DiceView() {
             <RotateCcw />
           </Button>
         </div>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <Button variant="outline" onClick={() => show(rollAdvantage(1, mod))}>
-            <ArrowUpCircle className="text-success" /> Vantagem
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border px-3 py-2">
+          <label htmlFor="advantage-die" className="text-sm font-semibold">
+            Dado de vantagem/desvantagem
+          </label>
+          <select
+            id="advantage-die"
+            className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+            value={advantageDie}
+            onChange={(e) => setAdvantageDie(Number(e.target.value))}
+          >
+            {DICE.map((sides) => (
+              <option key={sides} value={sides}>
+                d{sides}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="mt-2 grid grid-cols-1 gap-2 min-[400px]:grid-cols-2">
+          <Button variant="outline" onClick={() => show(rollAdvantage(1, mod, advantageDie))}>
+            <ArrowUpCircle className="text-success" /> Vantagem d{advantageDie}
           </Button>
-          <Button variant="outline" onClick={() => show(rollAdvantage(-1, mod))}>
-            <ArrowDownCircle className="text-destructive" /> Desvantagem
+          <Button variant="outline" onClick={() => show(rollAdvantage(-1, mod, advantageDie))}>
+            <ArrowDownCircle className="text-destructive" /> Desvantagem d{advantageDie}
           </Button>
         </div>
 
