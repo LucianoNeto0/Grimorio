@@ -158,6 +158,11 @@ function HelpView() {
           A geração depende de conexão com a internet, da disponibilidade do serviço e dos limites
           configurados para a IA. Se falhar ou demorar, tente novamente mais tarde.
         </p>
+        <p className="mt-2">
+          A ideia, o sistema e o nível informados são enviados pelo servidor a um provedor externo
+          de IA para gerar a resposta. Evite incluir dados pessoais ou informações confidenciais na
+          descrição. O provedor pode aplicar seus próprios termos de uso e retenção.
+        </p>
       </GuideSection>
 
       <section className="panel p-4 sm:p-5">

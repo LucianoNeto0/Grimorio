@@ -1,4 +1,4 @@
-import type { GeneratedCharacter } from "./ai.functions";
+import type { GeneratedCharacter } from "./ai/types";
 import { uid, type FeatRow, type Sheet } from "./sheet";
 
 const SEPARATORS = [" — ", " – ", " - ", " (", ": ", "; ", ", ", ". ", " com "];

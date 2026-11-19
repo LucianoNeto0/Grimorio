@@ -29,7 +29,7 @@ A configuração `vite.config.ts` diferencia os alvos de build. O build web mant
 - TanStack Start e TanStack Router.
 - Vite e Nitro com preset Vercel.
 - Tailwind CSS e Radix UI.
-- Google Gemini com saída JSON estruturada.
+- Google Gemini e provedores compatíveis com OpenAI, com saída JSON estruturada.
 - Zod para validação de entrada e resposta.
 - Redis REST/Upstash para rate limiting.
 - Capacitor para empacotamento Android.
@@ -73,6 +73,12 @@ UPSTASH_REDIS_REST_KV_REST_API_TOKEN
 
 O limite padrão é de 2 gerações por IP a cada 10 minutos, 5 gerações por IP em 24 horas e 15 gerações globais em 24 horas. O teto global pode ser ajustado com `AI_GLOBAL_DAILY_LIMIT`. Em produção, se o Redis não estiver configurado ou estiver indisponível, as chamadas de IA são bloqueadas.
 
+## Provedores e resiliência da IA
+
+`AI_PROVIDER_ORDER` define a prioridade (padrão: `nvidia,gemini,groq,openrouter`). Um provedor é ignorado quando sua chave ou modelo não está configurado. Gemini usa `GEMINI_MODEL` (ou, por compatibilidade, somente o primeiro valor de `GEMINI_MODELS`); os demais precisam de modelo explícito: `GROQ_MODEL`, `NVIDIA_MODEL` e `OPENROUTER_MODEL`.
+
+O servidor tenta os provedores em série, com repetições apenas para falhas transitórias, timeout por provedor, prazo global e circuit breaker em memória por instância. Se nenhum provedor produzir uma ficha válida, a interface mostra o erro e oferece a ficha básica somente como ação explícita do usuário; ela não é apresentada como resultado da IA.
+
 ## Verificações
 
 ```bash
@@ -89,6 +95,8 @@ O projeto usa marcadores no início da primeira linha da mensagem de commit:
 - `[apk]`: gera a versão Android sem IA; a Vercel ignora esse commit.
 - `[ambos]`: atualiza a web e gera o APK como artefato do GitHub Actions.
 
+Se não houver marcador, a Vercel publica normalmente e o APK não é gerado. O build Android pode ser baixado em **Actions → Build APK → Artifacts**. Para a Vercel reconhecer o marcador `[apk]`, habilite **Automatically expose System Environment Variables** em **Project Settings → Environment Variables**.
+
 Para gerar a versão Android localmente:
 
 ```bash
@@ -97,6 +105,8 @@ npm run android:open
 ```
 
 O APK produzido pelo workflow é de depuração. Para distribuição na Play Store ainda é necessário configurar assinatura de release.
+
+O alvo APK mantém as fichas no armazenamento local do aparelho e não inclui a criação por IA nem chaves de provedores.
 
 ## Segurança e privacidade
 
