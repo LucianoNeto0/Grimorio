@@ -65,7 +65,9 @@ export function SheetView() {
         )}
       </div>
 
-      <IdentityFields />
+      <div data-tour="sheet-identity">
+        <IdentityFields />
+      </div>
 
       {sheet.secs.map((s, i) => (
         <SectionCard key={s.id} section={s} index={i} />
@@ -108,6 +110,7 @@ export function SheetView() {
         size="icon"
         variant="hero"
         className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 z-20 size-12 rounded-full shadow-[var(--shadow-glow)] md:bottom-6"
+        data-tour="add-section"
         aria-label="Adicionar seção à ficha"
         title="Adicionar seção"
         onClick={() => setAddSectionOpen(true)}

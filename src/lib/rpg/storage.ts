@@ -4,6 +4,7 @@ export const KEYS = {
   active: "rpg.active",
   theme: "rpg.theme",
   themes: "rpg.themes",
+  onboarding: "rpg.onboarding.v1",
 } as const;
 
 export function load<T>(key: string, fallback: T): T {
@@ -12,6 +13,14 @@ export function load<T>(key: string, fallback: T): T {
     return v ? (JSON.parse(v) as T) : fallback;
   } catch {
     return fallback;
+  }
+}
+
+export function hasStoredValue(key: string): boolean {
+  try {
+    return localStorage.getItem(key) !== null;
+  } catch {
+    return false;
   }
 }
 

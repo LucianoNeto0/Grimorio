@@ -42,7 +42,7 @@ export function baseSheet(): Sheet {
         id: uid(),
         t: "Atributos",
         type: "num",
-        rows: ["FOR", "DES", "CON", "INT", "SAB", "CAR"].map((l) => ({ id: uid(), l, v: 10 })),
+        rows: ["FOR", "DES", "CON", "INT", "SAB", "CAR"].map((l) => ({ id: uid(), l, v: 0 })),
       },
       {
         id: uid(),

@@ -46,7 +46,7 @@ export function DiceView() {
       />
 
       <section className="panel p-4 sm:p-5">
-        <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-7" data-tour="dice-builder">
           {DICE.map((n) => (
             <button
               key={n}
@@ -153,7 +153,10 @@ export function DiceView() {
             <RotateCcw />
           </Button>
         </div>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border px-3 py-2">
+        <div
+          className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border px-3 py-2"
+          data-tour="dice-advantage"
+        >
           <span className="text-sm font-semibold">Dado de vantagem/desvantagem</span>
           <DiePicker
             value={advantageDie}

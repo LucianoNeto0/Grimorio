@@ -70,7 +70,7 @@ export function PresetsView() {
         </section>
       )}
 
-      <section className="panel p-4 sm:p-5">
+      <section className="panel p-4 sm:p-5" data-tour="character-save">
         <h2 className="section-title mb-1">Salvar ficha atual</h2>
         <p className="mb-3 text-sm text-muted-foreground">
           Como está (personagem pronto) ou em branco (modelo de sistema).

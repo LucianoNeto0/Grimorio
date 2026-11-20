@@ -160,6 +160,7 @@ export function SectionCard({ section, index }: Props) {
             variant="ghost"
             aria-label={`Editar seção ${section.t}`}
             title={`Editar seção ${section.t}`}
+            data-tour={index === 0 ? "section-edit" : undefined}
             onClick={() => setConfirm("edit")}
           >
             <Pencil />

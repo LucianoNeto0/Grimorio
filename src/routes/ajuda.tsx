@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { PageTitle } from "@/components/rpg/AppShell";
+import { startOnboardingTour } from "@/lib/rpg/onboarding";
 
 export const Route = createFileRoute("/ajuda")({
   head: () => ({
@@ -48,6 +49,13 @@ function HelpView() {
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={startOnboardingTour}
+            className="rounded-full bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90"
+          >
+            Iniciar tour guiado
+          </button>
           <GuideLink to="/">Abrir ficha</GuideLink>
           <GuideLink to="/dados">Abrir dados</GuideLink>
           <GuideLink to="/personagens">Ver personagens</GuideLink>

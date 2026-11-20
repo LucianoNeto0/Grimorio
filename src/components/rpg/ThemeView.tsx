@@ -34,7 +34,7 @@ export function ThemeView() {
     <div className="space-y-4">
       <PageTitle title="Visual" subtitle="Deixe a ficha com a cara da sua campanha." />
 
-      <section className="panel p-4 sm:p-5">
+      <section className="panel p-4 sm:p-5" data-tour="theme-selector">
         <h2 className="section-title mb-3">Tema</h2>
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           <ThemeCard

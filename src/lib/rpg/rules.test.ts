@@ -55,6 +55,17 @@ describe("imagem de perfil", () => {
 });
 
 describe("ficha", () => {
+  it("ficha padrão começa com atributos em zero e barras em dez", () => {
+    const sheet = baseSheet();
+    const attributes = sheet.secs.find((section) => section.t === "Atributos");
+    const bars = sheet.secs.find((section) => section.type === "bar");
+
+    expect(attributes?.type === "num" && attributes.rows.map((row) => row.v)).toEqual([
+      0, 0, 0, 0, 0, 0,
+    ]);
+    expect(bars?.type === "bar" && bars.rows.map((row) => row.v)).toEqual([10, 10]);
+  });
+
   it("modelo em branco zera números, esvazia listas e enche as barras", () => {
     const s = baseSheet();
     s.head[0]!.v = "Aria";

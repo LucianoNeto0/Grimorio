@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { useRpg } from "@/lib/rpg/useRpg";
 import { cn } from "@/lib/utils";
 
+import { OnboardingTour } from "./OnboardingTour";
+
 const NAV = [
   { to: "/", label: "Ficha", icon: BookOpen },
   { to: "/dados", label: "Dados", icon: Dices },
@@ -50,7 +52,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <div className="ml-auto flex items-center gap-2">
             <Button asChild size="icon" variant="ghost">
-              <Link to="/ajuda" aria-label="Abrir tutorial" title="Ajuda e tutorial">
+              <Link
+                to="/ajuda"
+                aria-label="Abrir tutorial"
+                title="Ajuda e tutorial"
+                data-tour="help-button"
+              >
                 <CircleHelp />
               </Link>
             </Button>
@@ -107,6 +114,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </div>
       </nav>
+      <OnboardingTour />
     </div>
   );
 }
