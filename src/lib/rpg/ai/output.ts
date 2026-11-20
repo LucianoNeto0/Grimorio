@@ -88,9 +88,18 @@ function isRecord(value: unknown): value is UnknownRecord {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+function normalizedFieldName(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
 function field(record: UnknownRecord, names: string[]) {
-  for (const name of names) {
-    if (Object.prototype.hasOwnProperty.call(record, name)) return record[name];
+  const candidates = new Set(names.map(normalizedFieldName));
+  for (const [key, value] of Object.entries(record)) {
+    if (candidates.has(normalizedFieldName(key))) return value;
   }
   return undefined;
 }
@@ -102,6 +111,11 @@ function finiteNumber(value: unknown) {
     if (Number.isFinite(parsed)) return parsed;
   }
   return value;
+}
+
+function numberOr(value: unknown, fallback: number) {
+  const normalized = finiteNumber(value);
+  return typeof normalized === "number" ? normalized : fallback;
 }
 
 function detail(value: unknown) {
@@ -117,10 +131,47 @@ function joinedDetails(...values: string[]) {
 /** Converts common provider-specific name/value structures to canonical rows. */
 function normalizeNameValueList(value: unknown): unknown {
   const normalizeRow = (row: unknown, fallbackName?: string) => {
+    if (Array.isArray(row)) {
+      return { nome: row[0] ?? fallbackName, valor: finiteNumber(row[1]) };
+    }
+    if (typeof row === "string") {
+      const compact = row.trim().match(/^(.+?)\s*[:;]?\s*([+-]?\d+(?:\.\d+)?)$/);
+      return compact
+        ? { nome: compact[1]!.trim(), valor: finiteNumber(compact[2]) }
+        : { nome: fallbackName, valor: finiteNumber(row) };
+    }
     if (!isRecord(row)) return { nome: fallbackName, valor: finiteNumber(row) };
+    const entries = Object.entries(row);
+    const singleEntry = entries.length === 1 ? entries[0] : undefined;
     return {
-      nome: field(row, ["nome", "name", "label"]) ?? fallbackName,
-      valor: finiteNumber(field(row, ["valor", "value", "modificador", "modifier"])),
+      nome:
+        field(row, [
+          "nome",
+          "name",
+          "label",
+          "atributo",
+          "attribute",
+          "pericia",
+          "skill",
+          "nome atributo",
+          "nome pericia",
+        ]) ??
+        fallbackName ??
+        singleEntry?.[0],
+      valor: finiteNumber(
+        field(row, [
+          "valor",
+          "value",
+          "modificador",
+          "modifier",
+          "bonus",
+          "bônus",
+          "total",
+          "pontuacao",
+          "pontuação",
+          "score",
+        ]) ?? singleEntry?.[1],
+      ),
     };
   };
   if (Array.isArray(value)) return value.map((row) => normalizeRow(row));
@@ -177,7 +228,9 @@ function normalizeCharacterShape(value: unknown): unknown {
     classe: field(value, ["classe", "class", "arquetipo", "archetype"]),
     nivel: finiteNumber(field(value, ["nivel", "level"])),
     vida: finiteNumber(field(value, ["vida", "hp", "health"])),
-    mana: finiteNumber(field(value, ["mana", "mp"]) ?? 0),
+    // Providers often emit "N/A" when the selected RPG has no mana resource.
+    // The editable sheet represents that case with zero, never with a fake value.
+    mana: numberOr(field(value, ["mana", "mp", "energia", "energy"]), 0),
     atributos: normalizeNameValueList(field(value, ["atributos", "attributes"])),
     pericias: normalizeNameValueList(field(value, ["pericias", "skills"])),
     habilidades: normalizeAbilities(field(value, ["habilidades", "abilities"])),

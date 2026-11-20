@@ -106,11 +106,11 @@ async function runProvider(
     });
     return null;
   }
-  const configuredRetries = Number(process.env["AI_MAX_RETRIES"] ?? 2);
+  const configuredRetries = Number(process.env["AI_MAX_RETRIES"] ?? 1);
   const retries =
     Number.isInteger(configuredRetries) && configuredRetries >= 0
       ? Math.min(2, configuredRetries)
-      : 2;
+      : 1;
   const baseMs = positiveInt(process.env["AI_BACKOFF_BASE_MS"], 1000);
   const maxBackoffMs = positiveInt(process.env["AI_BACKOFF_MAX_MS"], 4000);
   const providerTimeoutMs = positiveInt(process.env["AI_PROVIDER_TIMEOUT_MS"], 8000);

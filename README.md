@@ -75,7 +75,7 @@ O limite padrão é de 2 gerações por IP a cada 10 minutos, 5 gerações por I
 
 ## Provedores e resiliência da IA
 
-`AI_PROVIDER_ORDER` define a prioridade (padrão: `nvidia,gemini,groq,openrouter`). Um provedor é ignorado quando sua chave ou modelo não está configurado. Gemini usa `GEMINI_MODEL` (ou, por compatibilidade, somente o primeiro valor de `GEMINI_MODELS`); os demais precisam de modelo explícito: `GROQ_MODEL`, `NVIDIA_MODEL` e `OPENROUTER_MODEL`.
+`AI_PROVIDER_ORDER` define a prioridade (padrão: `groq,gemini,nvidia,openrouter`). Um provedor é ignorado quando sua chave ou modelo não está configurado. Para `openai/gpt-oss-120b`, o Groq usa JSON Schema estrito, evitando respostas com campos fora do formato esperado. Gemini usa `GEMINI_MODEL` (ou, por compatibilidade, somente o primeiro valor de `GEMINI_MODELS`); os demais precisam de modelo explícito: `GROQ_MODEL`, `NVIDIA_MODEL` e `OPENROUTER_MODEL`.
 
 O servidor tenta os provedores em série, com repetições apenas para falhas transitórias, timeout por provedor, prazo global e circuit breaker em memória por instância. Se nenhum provedor produzir uma ficha válida, a interface mostra o erro e oferece a ficha básica somente como ação explícita do usuário; ela não é apresentada como resultado da IA.
 

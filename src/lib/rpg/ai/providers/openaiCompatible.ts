@@ -9,6 +9,8 @@ export type CompatibleProviderOptions = {
   baseUrl: string;
   maxTokensField: "max_tokens" | "max_completion_tokens";
   jsonObject: boolean;
+  jsonSchema?: boolean;
+  responseFormat?: Record<string, unknown>;
   headers?: Record<string, string>;
   extraBody?: Record<string, unknown>;
 };
@@ -18,6 +20,7 @@ const systemInstruction =
 
 const creativeSystemInstruction = [
   systemInstruction,
+  'Use the canonical row shapes: "mana" must be a number (use 0 when the system has no mana); every skill must be {"nome":"...","valor":number}; every attribute must be {"nome":"...","valor":number}.',
   "A ideia do jogador é obrigatória: transforme o conflito, os objetivos e a origem descritos em escolhas específicas da ficha.",
   "Crie de 4 a 8 perícias úteis, de 3 a 6 habilidades distintas com descrições curtas, de 3 a 6 itens significativos e uma história vívida em dois parágrafos.",
   "Não use 'A definir', 'Novo personagem' ou textos genéricos. Não deixe campos criativos vazios.",
@@ -67,7 +70,7 @@ export function createOpenAiCompatibleProvider(options: CompatibleProviderOption
     name: options.name,
     model: options.model,
     capabilities: {
-      jsonSchema: false,
+      jsonSchema: options.jsonSchema ?? false,
       jsonObject: options.jsonObject,
       tools: false,
       maxOutputTokens: 4096,
@@ -83,7 +86,8 @@ export function createOpenAiCompatibleProvider(options: CompatibleProviderOption
         [options.maxTokensField]: 4096,
         ...options.extraBody,
       };
-      if (options.jsonObject) body["response_format"] = { type: "json_object" };
+      if (options.responseFormat) body["response_format"] = options.responseFormat;
+      else if (options.jsonObject) body["response_format"] = { type: "json_object" };
       let response: Response;
       try {
         response = await fetch(`${base}/chat/completions`, {

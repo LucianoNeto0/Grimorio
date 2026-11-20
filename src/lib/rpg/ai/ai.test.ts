@@ -6,6 +6,7 @@ import { computeBackoffMs } from "./retry";
 import { CircuitBreaker } from "./circuitBreaker";
 import { generateWithFallback } from "./orchestrator";
 import { createNvidiaProvider } from "./providers/nvidia";
+import { createGroqProvider } from "./providers/groq";
 import { createOpenRouterProvider } from "./providers/openrouter";
 import { sheetFromAi } from "../fromAi";
 import { logAiEvent } from "./telemetry";
@@ -105,6 +106,30 @@ describe("AI resilience utilities", () => {
     }
   });
 
+  it("normalizes NVIDIA skill rows with provider-specific labels and bonuses", () => {
+    const nvidiaCharacter = {
+      ...validCharacter,
+      mana: "N/A",
+      pericias: [
+        { Perícia: "Atletismo", Bônus: "+5" },
+        { Furtividade: "-1" },
+        ["Sobrevivência", "3"],
+        "Intimidação +2",
+      ],
+    };
+    const result = parseCharacterOutput(JSON.stringify(nvidiaCharacter));
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.character.mana).toBe(0);
+      expect(result.character.pericias).toEqual([
+        { nome: "Atletismo", valor: 5 },
+        { nome: "Furtividade", valor: -1 },
+        { nome: "Sobrevivência", valor: 3 },
+        { nome: "Intimidação", valor: 2 },
+      ]);
+    }
+  });
+
   it("normalizes NVIDIA ability and item fields without dropping their details", () => {
     const nvidiaCharacter = {
       ...validCharacter,
@@ -171,6 +196,35 @@ describe("AI resilience utilities", () => {
     };
     expect(body.chat_template_kwargs?.enable_thinking).toBe(false);
     expect(body.messages?.[0]?.content).toContain("habilidades distintas");
+  });
+
+  it("uses Groq strict structured output for GPT-OSS character generation", async () => {
+    let sentBody = "";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+        sentBody = String(init?.body);
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ choices: [{ message: { content: JSON.stringify(validCharacter) } }] }),
+            { status: 200 },
+          ),
+        );
+      }),
+    );
+    const provider = createGroqProvider("test-key-not-a-secret", "openai/gpt-oss-120b");
+    await provider.generate({
+      prompt: "Crie uma ficha.",
+      requestId: "groq-structured-output-contract",
+      signal: new AbortController().signal,
+    });
+    const body = JSON.parse(sentBody) as {
+      reasoning_effort?: string;
+      response_format?: { type?: string; json_schema?: { strict?: boolean } };
+    };
+    expect(body.reasoning_effort).toBe("low");
+    expect(body.response_format?.type).toBe("json_schema");
+    expect(body.response_format?.json_schema?.strict).toBe(true);
   });
 
   it("drops prompts and unapproved fields from telemetry", () => {
