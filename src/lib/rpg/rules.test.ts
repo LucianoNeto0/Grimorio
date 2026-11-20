@@ -4,6 +4,8 @@ import { rollAdvantage, rollCheck, rollPool } from "./dice";
 import type { GeneratedCharacter } from "./ai.functions";
 import { sheetFromAi, splitLong } from "./fromAi";
 import { baseSheet, clampBar, stripSheet } from "./sheet";
+import { MAX_PROFILE_IMAGE_SOURCE_BYTES, profileImageError } from "./storage";
+import { MAX_ROLL_HISTORY, prependRollHistory, type HistoryEntry } from "./store-context";
 
 // rng returning fixed values in order; value v maps to face 1 + floor(v * sides)
 const seq = (...vals: number[]) => {
@@ -25,6 +27,30 @@ describe("dados", () => {
 
   it("teste da ficha rola d20 + valor do atributo", () => {
     expect(rollCheck("FOR", 5, seq(0.45)).total).toBe(10 + 5);
+  });
+
+  it("mantém somente as dez rolagens mais recentes no histórico", () => {
+    const history = Array.from({ length: MAX_ROLL_HISTORY }, (_, index): HistoryEntry => ({
+      id: String(index),
+      text: `d20: ${index}`,
+      total: index,
+      at: index,
+    }));
+    const next = prependRollHistory(history, { id: "nova", text: "d20: 20", total: 20, at: 20 });
+
+    expect(next).toHaveLength(MAX_ROLL_HISTORY);
+    expect(next[0]?.id).toBe("nova");
+    expect(next.at(-1)?.id).toBe("8");
+  });
+});
+
+describe("imagem de perfil", () => {
+  it("recusa formatos não suportados e arquivos muito grandes antes da leitura", () => {
+    expect(profileImageError({ type: "image/gif", size: 100 } as File)).toContain("JPG");
+    expect(
+      profileImageError({ type: "image/jpeg", size: MAX_PROFILE_IMAGE_SOURCE_BYTES + 1 } as File),
+    ).toContain("8 MB");
+    expect(profileImageError({ type: "image/webp", size: 100 } as File)).toBeNull();
   });
 });
 

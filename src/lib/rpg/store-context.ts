@@ -12,6 +12,13 @@ export type HistoryEntry = {
   at: number;
 };
 
+/** The recent roll list is intentionally short and is never persisted. */
+export const MAX_ROLL_HISTORY = 10;
+
+export function prependRollHistory(history: HistoryEntry[], entry: HistoryEntry): HistoryEntry[] {
+  return [entry, ...history].slice(0, MAX_ROLL_HISTORY);
+}
+
 export type RpgStore = {
   ready: boolean;
   sheet: Sheet;

@@ -4,11 +4,13 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { DICE, rollAdvantage, rollPool, type RollResult } from "@/lib/rpg/dice";
+import { MAX_ROLL_HISTORY } from "@/lib/rpg/store-context";
 import { useRpg } from "@/lib/rpg/useRpg";
 import { cn } from "@/lib/utils";
 
 import { PageTitle } from "./AppShell";
 import { ConfirmButton } from "./ConfirmButton";
+import { DiePicker } from "./DiePicker";
 
 export function DiceView() {
   const { history, pushRoll, clearHistory } = useRpg();
@@ -152,21 +154,13 @@ export function DiceView() {
           </Button>
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border px-3 py-2">
-          <label htmlFor="advantage-die" className="text-sm font-semibold">
-            Dado de vantagem/desvantagem
-          </label>
-          <select
-            id="advantage-die"
-            className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+          <span className="text-sm font-semibold">Dado de vantagem/desvantagem</span>
+          <DiePicker
             value={advantageDie}
-            onChange={(e) => setAdvantageDie(Number(e.target.value))}
-          >
-            {DICE.map((sides) => (
-              <option key={sides} value={sides}>
-                d{sides}
-              </option>
-            ))}
-          </select>
+            label="Dado de vantagem/desvantagem"
+            onChange={setAdvantageDie}
+            compact
+          />
         </div>
         <div className="mt-2 grid grid-cols-1 gap-2 min-[400px]:grid-cols-2">
           <Button variant="outline" onClick={() => show(rollAdvantage(1, mod, advantageDie))}>
@@ -201,7 +195,7 @@ export function DiceView() {
 
       <section className="panel p-4 sm:p-5">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="section-title">Histórico</h2>
+          <h2 className="section-title">Histórico recente ({MAX_ROLL_HISTORY})</h2>
           {history.length > 0 && (
             <ConfirmButton
               size="sm"

@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { toast } from "sonner";
 
 import { useRpg } from "@/lib/rpg/useRpg";
-import { shrinkImage } from "@/lib/rpg/storage";
+import { prepareProfileImage, PROFILE_IMAGE_ACCEPT } from "@/lib/rpg/storage";
 
 export function Portrait() {
   const { sheet, update } = useRpg();
@@ -39,17 +39,17 @@ export function Portrait() {
       <input
         ref={input}
         type="file"
-        accept="image/*"
+        accept={PROFILE_IMAGE_ACCEPT}
         className="hidden"
         onChange={async (e) => {
           const f = e.target.files?.[0];
           e.target.value = "";
           if (!f) return;
           try {
-            const url = await shrinkImage(f, 360, 0.82);
+            const url = await prepareProfileImage(f);
             update((d) => void (d.photo = url));
-          } catch {
-            toast.error("Não consegui abrir essa imagem");
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Não consegui abrir essa imagem.");
           }
         }}
       />

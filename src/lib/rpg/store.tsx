@@ -3,7 +3,7 @@ import { toast } from "sonner";
 
 import type { RollResult } from "./dice";
 import { baseSheet, clone, normalizeSheet, sameSheet, uid, type Preset, type Sheet } from "./sheet";
-import { RpgContext, type HistoryEntry, type RpgStore } from "./store-context";
+import { prependRollHistory, RpgContext, type HistoryEntry, type RpgStore } from "./store-context";
 import { KEYS, load, save } from "./storage";
 import { applyTheme, normalizeTheme, type SavedTheme, type ThemeSettings } from "./theme";
 
@@ -103,7 +103,7 @@ export function RpgProvider({ children }: { children: ReactNode }) {
       crit: r.crit,
       at: Date.now(),
     };
-    setHistory((h) => [e, ...h].slice(0, 30));
+    setHistory((h) => prependRollHistory(h, e));
     return e;
   }, []);
 
